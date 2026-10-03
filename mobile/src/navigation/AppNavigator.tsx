@@ -56,13 +56,18 @@ const AppNavigator = ({
         }}
       />
 
-      <Stack.Screen
-        name="RecentlyViewed"
-        component={RecentlyViewedScreen}
-        options={{
-          title: 'Recently Viewed',
-        }}
-      />
+     <Stack.Screen
+      name="RecentlyViewed"
+      options={{
+        title: 'Recently Viewed',
+      }}
+>
+      {() => (
+        <RecentlyViewedScreen
+          token={token}
+        />
+       )}
+</Stack.Screen>
 
       <Stack.Screen
         name="ContinueShopping"

@@ -1,4 +1,8 @@
-import React, { useCallback, useState } from 'react';
+import React, {
+  useCallback,
+  useState,
+} from 'react';
+
 import {
   ActivityIndicator,
   FlatList,
@@ -8,6 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+
 import { useFocusEffect } from '@react-navigation/native';
 
 import {
@@ -15,34 +20,45 @@ import {
   RecentlyViewedItem,
 } from '../services/recentlyViewedService';
 
-const RecentlyViewedScreen = (): React.JSX.Element => {
-  const [products, setProducts] = useState<RecentlyViewedItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+interface RecentlyViewedScreenProps {
+  token: string;
+}
 
-  // Temporary token for testing.
-  // We will replace this with the real login token later.
-  const token = 'TEMP_TOKEN';
+const RecentlyViewedScreen = ({
+  token,
+}: RecentlyViewedScreenProps): React.JSX.Element => {
+  const [products, setProducts] =
+    useState<RecentlyViewedItem[]>([]);
 
-  const loadRecentlyViewed = useCallback(async (): Promise<void> => {
-    try {
-      setLoading(true);
-      setError('');
+  const [loading, setLoading] =
+    useState(true);
 
-      const data = await getRecentlyViewed(token);
+  const [error, setError] =
+    useState('');
 
-      setProducts(data);
-    } catch (err) {
-      console.error(
-        'Failed to load recently viewed products:',
-        err
-      );
+  const loadRecentlyViewed =
+    useCallback(async (): Promise<void> => {
+      try {
+        setLoading(true);
+        setError('');
 
-      setError('Failed to load recently viewed products');
-    } finally {
-      setLoading(false);
-    }
-  }, [token]);
+        const data =
+          await getRecentlyViewed(token);
+
+        setProducts(data);
+      } catch (err) {
+        console.error(
+          'Failed to load recently viewed products:',
+          err
+        );
+
+        setError(
+          'Failed to load recently viewed products'
+        );
+      } finally {
+        setLoading(false);
+      }
+    }, [token]);
 
   useFocusEffect(
     useCallback(() => {
@@ -96,7 +112,9 @@ const RecentlyViewedScreen = (): React.JSX.Element => {
       ) : (
         <FlatList
           data={products}
-          keyExtractor={(item) => item.product._id}
+          keyExtractor={(item) =>
+            item.product._id
+          }
           contentContainerStyle={styles.list}
           renderItem={({ item }) => (
             <View style={styles.productCard}>
