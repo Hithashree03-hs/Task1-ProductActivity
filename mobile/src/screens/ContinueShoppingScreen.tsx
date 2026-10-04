@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   SafeAreaView,
   StyleSheet,
@@ -13,6 +14,7 @@ import {
   ContinueShoppingItem,
   getContinueShopping,
 } from '../services/continueShoppingService';
+
 import { addToCart } from '../services/cartService';
 import { addToWishlist } from '../services/wishlistService';
 
@@ -23,24 +25,22 @@ interface ContinueShoppingScreenProps {
 const ContinueShoppingScreen = ({
   token,
 }: ContinueShoppingScreenProps): React.JSX.Element => {
-   if (!token) {
-    return (
-      <SafeAreaView style={styles.center}>
-        <Text style={styles.emptyText}>
-          Please log in to view Continue Shopping.
-        </Text>
-      </SafeAreaView>
-    );
-  }
+  const [products, setProducts] = useState<
+    ContinueShoppingItem[]
+  >([]);
 
-  
-  const [products, setProducts] = useState<ContinueShoppingItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
     const loadContinueShopping = async (): Promise<void> => {
       try {
         const data = await getContinueShopping(token);
+
         setProducts(data);
       } catch (error) {
         console.error(
@@ -58,20 +58,30 @@ const ContinueShoppingScreen = ({
   const handleAddToCart = async (
     productId: string
   ): Promise<void> => {
+    if (!token) {
+      Alert.alert(
+        'Login Required',
+        'Please log in to add products to your cart.'
+      );
+      return;
+    }
+
     try {
       await addToCart(token, productId);
 
-      // Remove the item from this screen after
-      // successfully adding it to the cart.
-      setProducts((currentProducts) =>
-        currentProducts.filter(
-          (item) => item.product._id !== productId
-        )
+      Alert.alert(
+        'Success',
+        'Product added to cart.'
       );
     } catch (error) {
       console.error(
         'Failed to add product to cart:',
         error
+      );
+
+      Alert.alert(
+        'Error',
+        'Failed to add product to cart.'
       );
     }
   };
@@ -79,15 +89,43 @@ const ContinueShoppingScreen = ({
   const handleAddToWishlist = async (
     productId: string
   ): Promise<void> => {
+    if (!token) {
+      Alert.alert(
+        'Login Required',
+        'Please log in to add products to your wishlist.'
+      );
+      return;
+    }
+
     try {
       await addToWishlist(token, productId);
+
+      Alert.alert(
+        'Success',
+        'Product added to wishlist.'
+      );
     } catch (error) {
       console.error(
         'Failed to add product to wishlist:',
         error
       );
+
+      Alert.alert(
+        'Error',
+        'Failed to add product to wishlist.'
+      );
     }
   };
+
+  if (!token) {
+    return (
+      <SafeAreaView style={styles.center}>
+        <Text style={styles.emptyText}>
+          Please log in to view Continue Shopping.
+        </Text>
+      </SafeAreaView>
+    );
+  }
 
   if (loading) {
     return (

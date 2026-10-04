@@ -3,13 +3,14 @@ import ProductActivity, {
 } from '../models/ProductActivity';
 import Product from '../models/Product';
 import mongoose from 'mongoose';
+import { getIO } from '../sockets/server';
 
 const MAX_RECENTLY_VIEWED = 20;
 
 /**
  * Record a product view for a logged-in user.
  *
- * If the user has already viewed the product, we update its
+ * If the user has already viewed the product, update its
  * viewedAt timestamp instead of creating a duplicate.
  */
 export const recordProductView = async (
@@ -51,6 +52,11 @@ export const recordProductView = async (
       _id: { $in: idsToDelete },
     });
   }
+
+  // Notify all connected devices for this user.
+  getIO()
+    .to(`user:${userId}`)
+    .emit('recentlyViewedUpdated');
 };
 
 /**
@@ -110,7 +116,7 @@ export const mergeRecentlyViewed = async (
     });
   }
 
-  // Add local history.
+  // Add local anonymous history.
   // If the product already exists, keep the latest viewedAt.
   for (const item of localHistory) {
     const existing = mergedHistory.get(item.productId);
@@ -130,7 +136,8 @@ export const mergeRecentlyViewed = async (
   // Sort newest first and keep only 20.
   const merged = Array.from(mergedHistory.values())
     .sort(
-      (a, b) => b.viewedAt.getTime() - a.viewedAt.getTime()
+      (a, b) =>
+        b.viewedAt.getTime() - a.viewedAt.getTime()
     )
     .slice(0, MAX_RECENTLY_VIEWED);
 
@@ -142,7 +149,8 @@ export const mergeRecentlyViewed = async (
 
   // Verify that the products still exist before inserting.
   const productIds = merged.map(
-    (item) => new mongoose.Types.ObjectId(item.productId)
+    (item) =>
+      new mongoose.Types.ObjectId(item.productId)
   );
 
   const existingProducts = await Product.find({
@@ -152,19 +160,33 @@ export const mergeRecentlyViewed = async (
     .lean();
 
   const existingProductIds = new Set(
-    existingProducts.map((product) => product._id.toString())
+    existingProducts.map(
+      (product) => product._id.toString()
+    )
   );
 
   const activitiesToInsert = merged
-    .filter((item) => existingProductIds.has(item.productId))
+    .filter((item) =>
+      existingProductIds.has(item.productId)
+    )
     .map((item) => ({
       userId: new mongoose.Types.ObjectId(userId),
-      productId: new mongoose.Types.ObjectId(item.productId),
+      productId: new mongoose.Types.ObjectId(
+        item.productId
+      ),
       activityType: ActivityType.VIEW,
       viewedAt: item.viewedAt,
     }));
 
   if (activitiesToInsert.length > 0) {
-    await ProductActivity.insertMany(activitiesToInsert);
+    await ProductActivity.insertMany(
+      activitiesToInsert
+    );
   }
+
+  // Notify all connected devices that the user's
+  // Recently Viewed history has changed after the merge.
+  getIO()
+    .to(`user:${userId}`)
+    .emit('recentlyViewedUpdated');
 };

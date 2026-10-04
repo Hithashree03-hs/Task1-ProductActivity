@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+  View,
 } from 'react-native';
 
 import {
@@ -96,6 +97,30 @@ const ProductListScreen = ({
         Products
       </Text>
 
+      <View style={styles.navigationButtons}>
+        <TouchableOpacity
+          style={styles.navigationButton}
+          onPress={() =>
+            navigation.navigate('RecentlyViewed')
+          }
+        >
+          <Text style={styles.navigationButtonText}>
+            Recently Viewed
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.navigationButton}
+          onPress={() =>
+            navigation.navigate('ContinueShopping')
+          }
+        >
+          <Text style={styles.navigationButtonText}>
+            Continue Shopping
+          </Text>
+        </TouchableOpacity>
+      </View>
+
       <FlatList
         data={products}
         keyExtractor={(item) => item._id}
@@ -152,6 +177,25 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     padding: 20,
+  },
+
+  navigationButtons: {
+    paddingHorizontal: 20,
+    marginBottom: 10,
+  },
+
+  navigationButton: {
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+
+  navigationButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 
   list: {

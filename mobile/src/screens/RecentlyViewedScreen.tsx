@@ -19,6 +19,7 @@ import {
   getRecentlyViewed,
   RecentlyViewedItem,
 } from '../services/recentlyViewedService';
+import { getSocket } from '../services/socketService';
 
 interface RecentlyViewedScreenProps {
   token: string;
@@ -60,11 +61,29 @@ const RecentlyViewedScreen = ({
       }
     }, [token]);
 
-  useFocusEffect(
-    useCallback(() => {
+useFocusEffect(
+  useCallback(() => {
+    loadRecentlyViewed();
+
+    const socket = getSocket();
+
+    const handleRecentlyViewedUpdated = (): void => {
       loadRecentlyViewed();
-    }, [loadRecentlyViewed])
-  );
+    };
+
+    socket?.on(
+      'recentlyViewedUpdated',
+      handleRecentlyViewedUpdated
+    );
+
+    return () => {
+      socket?.off(
+        'recentlyViewedUpdated',
+        handleRecentlyViewedUpdated
+      );
+    };
+  }, [loadRecentlyViewed])
+);
 
   if (loading) {
     return (

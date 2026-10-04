@@ -1,7 +1,11 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import { createServer } from 'http';
+
 import connectDB from './config/db';
+import { initializeSocket } from './sockets/server';
+
 import authRoutes from './routes/authRoutes';
 import productRoutes from './routes/productRoutes';
 import recentlyViewedRoutes from './routes/recentlyViewedRoutes';
@@ -9,7 +13,6 @@ import continueShoppingRoutes from './routes/continueShoppingRoutes';
 import cartRoutes from './routes/cartRoutes';
 import wishlistRoutes from './routes/wishlistRoutes';
 import orderRoutes from './routes/orderRoutes';
-
 
 dotenv.config();
 
@@ -44,15 +47,24 @@ app.use('/api/wishlist', wishlistRoutes);
 // Order routes
 app.use('/api/orders', orderRoutes);
 
-
 const PORT = process.env.PORT || 5000;
 
 const startServer = async (): Promise<void> => {
   try {
     await connectDB();
 
-    app.listen(PORT, () => {
-      console.log(`Server running on http://localhost:${PORT}`);
+    const httpServer = createServer(app);
+
+    initializeSocket(httpServer);
+
+    httpServer.listen(PORT, () => {
+      console.log(
+        `Server running on http://localhost:${PORT}`
+      );
+
+      console.log(
+        'Socket.IO server initialized'
+      );
     });
   } catch (error) {
     console.error('Failed to start server:', error);

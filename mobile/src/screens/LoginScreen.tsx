@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+
 import {
   ActivityIndicator,
   SafeAreaView,
@@ -10,6 +11,19 @@ import {
 } from 'react-native';
 
 import { loginUser } from '../services/authService';
+
+import {
+  getLocalHistory,
+  clearLocalHistory,
+} from '../services/anonymousHistoryService';
+
+import {
+  mergeRecentlyViewed,
+} from '../services/recentlyViewedService';
+
+import {
+  connectSocket,
+} from '../services/socketService';
 
 interface LoginScreenProps {
   onLoginSuccess: (token: string) => void;
@@ -38,6 +52,19 @@ const LoginScreen = ({
         email.trim(),
         password
       );
+
+      const localHistory = await getLocalHistory();
+
+      if (localHistory.length > 0) {
+        await mergeRecentlyViewed(
+          response.token,
+          localHistory
+        );
+
+        await clearLocalHistory();
+      }
+
+      connectSocket(response.token);
 
       onLoginSuccess(response.token);
     } catch (err) {

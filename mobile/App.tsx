@@ -10,6 +10,8 @@ import { NavigationContainer } from '@react-navigation/native';
 
 import AppNavigator from './src/navigation/AppNavigator';
 import LoginScreen from './src/screens/LoginScreen';
+import { connectSocket } from './src/services/socketService';
+
 
 const TOKEN_KEY = '@auth_token';
 
@@ -24,7 +26,12 @@ const App = (): React.JSX.Element => {
           TOKEN_KEY
         );
 
-        setToken(storedToken);
+        if (storedToken) {
+  connectSocket(storedToken);
+}
+
+setToken(storedToken);
+
       } catch (error) {
         console.error(
           'Failed to load authentication token:',
