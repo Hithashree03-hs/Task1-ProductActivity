@@ -8,7 +8,19 @@ A full-stack React Native application implementing product activity tracking wit
 
 \## Features
 
+## 📱 Android APK
 
+The Android application has been built and tested successfully.
+
+👉 **[Download Android APK](https://github.com/Hithashree03-hs/Task1-ProductActivity/releases/latest)**
+
+### Installation
+1. Download `app-release.apk`.
+2. Transfer it to an Android device or download it directly on the phone.
+3. Install the APK.
+4. Open the application and start using it.
+
+> The mobile application connects to the deployed Render backend and MongoDB Atlas database, so it does not require the developer's computer to be connected.
 
 \### Recently Viewed Products
 
