@@ -1,7 +1,11 @@
 import { Response } from 'express';
+
 import { AuthRequest } from '../middleware/auth';
+
 import Order from '../models/Order';
 import Product from '../models/Product';
+import Cart from '../models/Cart';
+
 import mongoose from 'mongoose';
 
 export const createOrder = async (
@@ -27,14 +31,30 @@ export const createOrder = async (
 
     let totalAmount = 0;
 
-    const orderItems = [];
+    const orderItems: {
+      productId: mongoose.Types.ObjectId;
+      quantity: number;
+      price: number;
+    }[] = [];
 
     for (const item of items) {
       const { productId, quantity } = item;
 
-      if (!productId || !quantity || quantity < 1) {
+      if (
+        !productId ||
+        !Number.isInteger(quantity) ||
+        quantity < 1
+      ) {
         res.status(400).json({
-          message: 'Each item requires productId and valid quantity',
+          message:
+            'Each item requires productId and valid quantity',
+        });
+        return;
+      }
+
+      if (!mongoose.Types.ObjectId.isValid(productId)) {
+        res.status(400).json({
+          message: `Invalid productId: ${productId}`,
         });
         return;
       }
@@ -58,28 +78,76 @@ export const createOrder = async (
       totalAmount += product.price * quantity;
 
       orderItems.push({
-        productId: new mongoose.Types.ObjectId(productId),
+        productId: new mongoose.Types.ObjectId(
+          productId
+        ),
         quantity,
         price: product.price,
       });
     }
 
     const order = await Order.create({
-      userId: new mongoose.Types.ObjectId(req.userId),
+      userId: new mongoose.Types.ObjectId(
+        req.userId
+      ),
       items: orderItems,
       totalAmount,
       status: 'COMPLETED',
     });
 
+    await Cart.findOneAndDelete({
+      userId: new mongoose.Types.ObjectId(
+        req.userId
+      ),
+    });
+
     res.status(201).json({
-      message: 'Order created successfully',
+      message: 'Order placed successfully',
       order,
     });
   } catch (error) {
-    console.error('Create order error:', error);
+    console.error(
+      'Create order error:',
+      error
+    );
 
     res.status(500).json({
       message: 'Failed to create order',
+    });
+  }
+};
+
+export const getOrders = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    if (!req.userId) {
+      res.status(401).json({
+        message: 'Authentication required',
+      });
+      return;
+    }
+
+    const orders = await Order.find({
+      userId: new mongoose.Types.ObjectId(
+        req.userId
+      ),
+    })
+      .sort({ createdAt: -1 })
+      .populate('items.productId');
+
+    res.status(200).json({
+      orders,
+    });
+  } catch (error) {
+    console.error(
+      'Get orders error:',
+      error
+    );
+
+    res.status(500).json({
+      message: 'Failed to load orders',
     });
   }
 };

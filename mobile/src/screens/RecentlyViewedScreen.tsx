@@ -6,126 +6,180 @@ import React, {
 import {
   ActivityIndicator,
   FlatList,
+  Image,
   SafeAreaView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 
-import { useFocusEffect } from '@react-navigation/native';
+import {
+  useFocusEffect,
+} from '@react-navigation/native';
 
 import {
   getRecentlyViewed,
   RecentlyViewedItem,
 } from '../services/recentlyViewedService';
-import { getSocket } from '../services/socketService';
+
+import {
+  getSocket,
+} from '../services/socketService';
 
 interface RecentlyViewedScreenProps {
-  token: string;
+  token: string | null;
 }
+
+const COLORS = {
+  background: '#F8F6F1',
+  primary: '#6B8F71',
+  primaryDark: '#294936',
+  softGreen: '#E8F0E9',
+  card: '#FFFFFF',
+  text: '#243027',
+  secondaryText: '#718078',
+  border: '#E3E8E3',
+};
 
 const RecentlyViewedScreen = ({
   token,
 }: RecentlyViewedScreenProps): React.JSX.Element => {
-  const [products, setProducts] =
-    useState<RecentlyViewedItem[]>([]);
+  const [products, setProducts] = useState<
+    RecentlyViewedItem[]
+  >([]);
 
-  const [loading, setLoading] =
-    useState(true);
+  const [loading, setLoading] = useState(true);
 
-  const [error, setError] =
-    useState('');
+  const loadRecentlyViewed = useCallback(
+    async (): Promise<void> => {
+      if (!token) {
+        setProducts([]);
+        setLoading(false);
+        return;
+      }
 
-  const loadRecentlyViewed =
-    useCallback(async (): Promise<void> => {
       try {
         setLoading(true);
-        setError('');
 
         const data =
           await getRecentlyViewed(token);
 
         setProducts(data);
-      } catch (err) {
+      } catch (error) {
         console.error(
-          'Failed to load recently viewed products:',
-          err
-        );
-
-        setError(
-          'Failed to load recently viewed products'
+          'Failed to load recently viewed:',
+          error
         );
       } finally {
         setLoading(false);
       }
-    }, [token]);
+    },
+    [token]
+  );
 
-useFocusEffect(
-  useCallback(() => {
-    loadRecentlyViewed();
-
-    const socket = getSocket();
-
-    const handleRecentlyViewedUpdated = (): void => {
+  useFocusEffect(
+    useCallback(() => {
       loadRecentlyViewed();
-    };
 
-    socket?.on(
-      'recentlyViewedUpdated',
-      handleRecentlyViewedUpdated
-    );
+      if (!token) {
+        return;
+      }
 
-    return () => {
-      socket?.off(
+      const socket = getSocket();
+
+      const handleRecentlyViewedUpdated =
+        (): void => {
+          loadRecentlyViewed();
+        };
+
+      socket?.on(
         'recentlyViewedUpdated',
         handleRecentlyViewedUpdated
       );
-    };
-  }, [loadRecentlyViewed])
-);
 
-  if (loading) {
+      return () => {
+        socket?.off(
+          'recentlyViewedUpdated',
+          handleRecentlyViewedUpdated
+        );
+      };
+    }, [token, loadRecentlyViewed])
+  );
+
+  if (!token) {
     return (
       <SafeAreaView style={styles.center}>
-        <ActivityIndicator size="large" />
+        <View style={styles.emptyIconContainer}>
+          <Text style={styles.emptyIcon}>
+            👀
+          </Text>
+        </View>
+
+        <Text style={styles.emptyTitle}>
+          Browse as a Guest
+        </Text>
 
         <Text style={styles.message}>
-          Loading recently viewed products...
+          Your viewed products are saved locally.
+        </Text>
+
+        <Text style={styles.subMessage}>
+          Log in later to merge your browsing
+          history with your account.
         </Text>
       </SafeAreaView>
     );
   }
 
-  if (error) {
+  if (loading) {
     return (
       <SafeAreaView style={styles.center}>
-        <Text style={styles.error}>
-          {error}
-        </Text>
+        <ActivityIndicator
+          size="large"
+          color={COLORS.primary}
+        />
 
-        <TouchableOpacity
-          style={styles.retryButton}
-          onPress={loadRecentlyViewed}
-        >
-          <Text style={styles.retryText}>
-            Try Again
-          </Text>
-        </TouchableOpacity>
+        <Text style={styles.message}>
+          Loading your history...
+        </Text>
       </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>
-        Recently Viewed
-      </Text>
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.headerTitle}>
+            Recently Viewed
+          </Text>
+
+          <Text style={styles.headerSubtitle}>
+            Pick up where you left off
+          </Text>
+        </View>
+
+        <View style={styles.countBadge}>
+          <Text style={styles.countText}>
+            {products.length}
+          </Text>
+        </View>
+      </View>
 
       {products.length === 0 ? (
         <View style={styles.center}>
-          <Text style={styles.emptyText}>
-            You haven't viewed any products yet.
+          <View style={styles.emptyIconContainer}>
+            <Text style={styles.emptyIcon}>
+              🕘
+            </Text>
+          </View>
+
+          <Text style={styles.emptyTitle}>
+            Nothing here yet
+          </Text>
+
+          <Text style={styles.message}>
+            Products you view will appear here.
           </Text>
         </View>
       ) : (
@@ -134,24 +188,51 @@ useFocusEffect(
           keyExtractor={(item) =>
             item.product._id
           }
+          numColumns={2}
+          columnWrapperStyle={styles.row}
           contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
           renderItem={({ item }) => (
-            <View style={styles.productCard}>
-              <Text style={styles.productName}>
-                {item.product.name}
-              </Text>
+            <View style={styles.card}>
+              <View style={styles.imageContainer}>
+                <Image
+                  source={{
+                    uri: item.product.image,
+                  }}
+                  style={styles.productImage}
+                  resizeMode="cover"
+                />
 
-              <Text style={styles.category}>
-                {item.product.category}
-              </Text>
+                <View style={styles.viewedBadge}>
+                  <Text style={styles.viewedBadgeText}>
+                    Viewed
+                  </Text>
+                </View>
+              </View>
 
-              <Text style={styles.price}>
-                ₹{item.product.price}
-              </Text>
+              <View style={styles.productInfo}>
+                <Text
+                  style={styles.productName}
+                  numberOfLines={2}
+                >
+                  {item.product.name}
+                </Text>
 
-              <Text style={styles.viewedText}>
-                Recently viewed
-              </Text>
+                <Text
+                  style={styles.category}
+                  numberOfLines={1}
+                >
+                  {item.product.category}
+                </Text>
+
+                <Text style={styles.price}>
+                  ₹{item.product.price}
+                </Text>
+
+                <Text style={styles.viewedAt}>
+                  Recently viewed
+                </Text>
+              </View>
             </View>
           )}
         />
@@ -163,79 +244,177 @@ useFocusEffect(
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: COLORS.background,
   },
 
   center: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 20,
+    padding: 30,
+    backgroundColor: COLORS.background,
   },
 
-  message: {
-    marginTop: 10,
-    textAlign: 'center',
-  },
-
-  error: {
-    fontSize: 16,
-    textAlign: 'center',
-  },
-
-  emptyText: {
-    fontSize: 16,
-    textAlign: 'center',
-  },
-
-  retryButton: {
-    marginTop: 15,
+  header: {
     paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderWidth: 1,
-    borderRadius: 8,
+    paddingTop: 22,
+    paddingBottom: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: COLORS.background,
   },
 
-  retryText: {
-    fontWeight: 'bold',
-  },
-
-  title: {
+  headerTitle: {
     fontSize: 28,
-    fontWeight: 'bold',
-    padding: 20,
+    fontWeight: '800',
+    color: COLORS.primaryDark,
+    letterSpacing: -0.5,
+  },
+
+  headerSubtitle: {
+    marginTop: 5,
+    fontSize: 14,
+    color: COLORS.secondaryText,
+  },
+
+  countBadge: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.softGreen,
+  },
+
+  countText: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: COLORS.primaryDark,
   },
 
   list: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingHorizontal: 15,
+    paddingBottom: 30,
   },
 
-  productCard: {
-    padding: 16,
-    marginBottom: 12,
+  row: {
+    justifyContent: 'space-between',
+  },
+
+  card: {
+    flex: 1,
+    marginHorizontal: 5,
+    marginBottom: 16,
+    padding: 10,
+    borderRadius: 20,
+    backgroundColor: COLORS.card,
     borderWidth: 1,
-    borderRadius: 8,
+    borderColor: COLORS.border,
+    shadowColor: '#294936',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+
+  imageContainer: {
+    position: 'relative',
+  },
+
+  productImage: {
+    width: '100%',
+    height: 155,
+    borderRadius: 16,
+    backgroundColor: COLORS.softGreen,
+  },
+
+  viewedBadge: {
+    position: 'absolute',
+    top: 9,
+    left: 9,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 12,
+    backgroundColor: COLORS.primaryDark,
+  },
+
+  viewedBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+
+  productInfo: {
+    paddingHorizontal: 4,
+    paddingTop: 10,
   },
 
   productName: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 16,
+    lineHeight: 21,
+    fontWeight: '800',
+    color: COLORS.text,
   },
 
   category: {
-    marginTop: 6,
-    fontSize: 14,
+    marginTop: 5,
+    fontSize: 12,
+    color: COLORS.secondaryText,
   },
 
   price: {
     marginTop: 8,
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '800',
+    color: COLORS.primaryDark,
   },
 
-  viewedText: {
-    marginTop: 8,
+  viewedAt: {
+    marginTop: 6,
+    fontSize: 11,
+    fontWeight: '600',
+    color: COLORS.primary,
+  },
+
+  emptyIconContainer: {
+    width: 82,
+    height: 82,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+    backgroundColor: COLORS.softGreen,
+  },
+
+  emptyIcon: {
+    fontSize: 38,
+  },
+
+  emptyTitle: {
+    fontSize: 23,
+    fontWeight: '800',
+    color: COLORS.primaryDark,
+    marginBottom: 8,
+  },
+
+  message: {
+    marginTop: 6,
+    fontSize: 15,
+    color: COLORS.secondaryText,
+    textAlign: 'center',
+  },
+
+  subMessage: {
+    marginTop: 10,
+    maxWidth: 310,
     fontSize: 13,
+    lineHeight: 20,
+    color: COLORS.secondaryText,
+    textAlign: 'center',
   },
 });
 

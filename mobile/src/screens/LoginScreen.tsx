@@ -48,27 +48,56 @@ const LoginScreen = ({
       setLoading(true);
       setError('');
 
+      // Step 1: Authenticate the user.
       const response = await loginUser(
         email.trim(),
         password
       );
 
-      const localHistory = await getLocalHistory();
-
-      if (localHistory.length > 0) {
-        await mergeRecentlyViewed(
-          response.token,
-          localHistory
-        );
-
-        await clearLocalHistory();
-      }
-
+      // Connect immediately after successful authentication.
       connectSocket(response.token);
 
+      // Step 2: Get anonymous browsing history.
+      const localHistory = await getLocalHistory();
+
+      // Step 3: Merge anonymous history into
+      // the logged-in user's server history.
+      //
+      // IMPORTANT:
+      // We only clear local history if the merge
+      // succeeds. If the merge fails, the user can
+      // still log in and the local history remains
+      // available for a future merge.
+      if (localHistory.length > 0) {
+        try {
+          await mergeRecentlyViewed(
+            response.token,
+            localHistory
+          );
+
+          await clearLocalHistory();
+
+          console.log(
+            'Anonymous history merged successfully.'
+          );
+        } catch (mergeError) {
+          console.error(
+            'Failed to merge anonymous history:',
+            mergeError
+          );
+
+          // Do not block login.
+          // Do not clear local history.
+        }
+      }
+
+      // Step 4: Complete login.
       onLoginSuccess(response.token);
     } catch (err) {
-      console.error('Login failed:', err);
+      console.error(
+        'Login failed:',
+        err
+      );
 
       setError(
         'Login failed. Please check your email and password.'

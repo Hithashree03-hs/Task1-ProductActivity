@@ -8,22 +8,30 @@ import ProductListScreen from '../screens/ProductListScreen';
 import ProductDetailScreen from '../screens/ProductDetailScreen';
 import RecentlyViewedScreen from '../screens/RecentlyViewedScreen';
 import ContinueShoppingScreen from '../screens/ContinueShoppingScreen';
+import CartScreen from '../screens/CartScreen';
+import WishlistScreen from '../screens/WishlistScreen';
 
 export type RootStackParamList = {
   Products: undefined;
 
   ProductDetail: {
     productId: string;
-    token: string;
+    token: string | null;
   };
 
   RecentlyViewed: undefined;
 
   ContinueShopping: undefined;
+
+  Cart: undefined;
+
+  Wishlist: undefined;
 };
 
 interface AppNavigatorProps {
-  token: string;
+  token: string | null;
+  onLoginPress: () => void;
+  onLogout: () => Promise<void>;
 }
 
 const Stack =
@@ -31,19 +39,23 @@ const Stack =
 
 const AppNavigator = ({
   token,
+  onLoginPress,
+  onLogout,
 }: AppNavigatorProps): React.JSX.Element => {
   return (
     <Stack.Navigator>
       <Stack.Screen
         name="Products"
         options={{
-          title: 'Products',
+          headerShown: false,
         }}
       >
         {(props) => (
           <ProductListScreen
             navigation={props.navigation}
             token={token}
+            onLoginPress={onLoginPress}
+            onLogout={onLogout}
           />
         )}
       </Stack.Screen>
@@ -56,18 +68,18 @@ const AppNavigator = ({
         }}
       />
 
-     <Stack.Screen
-      name="RecentlyViewed"
-      options={{
-        title: 'Recently Viewed',
-      }}
->
-      {() => (
-        <RecentlyViewedScreen
-          token={token}
-        />
-       )}
-</Stack.Screen>
+      <Stack.Screen
+        name="RecentlyViewed"
+        options={{
+          title: 'Recently Viewed',
+        }}
+      >
+        {() => (
+          <RecentlyViewedScreen
+            token={token}
+          />
+        )}
+      </Stack.Screen>
 
       <Stack.Screen
         name="ContinueShopping"
@@ -77,6 +89,33 @@ const AppNavigator = ({
       >
         {() => (
           <ContinueShoppingScreen
+            token={token}
+          />
+        )}
+      </Stack.Screen>
+
+      <Stack.Screen
+        name="Cart"
+        options={{
+          title: 'Cart',
+        }}
+      >
+        {() => (
+          <CartScreen
+            token={token}
+          />
+        )}
+      </Stack.Screen>
+
+      <Stack.Screen
+        name="Wishlist"
+        options={{
+          title: 'Wishlist',
+        }}
+      >
+        {(props) => (
+          <WishlistScreen
+            navigation={props.navigation}
             token={token}
           />
         )}

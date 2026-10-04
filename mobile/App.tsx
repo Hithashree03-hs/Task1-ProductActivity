@@ -1,37 +1,51 @@
 import React, { useEffect, useState } from 'react';
+
 import {
   ActivityIndicator,
   SafeAreaView,
   StyleSheet,
   Text,
 } from 'react-native';
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { NavigationContainer } from '@react-navigation/native';
+
+import {
+  NavigationContainer,
+} from '@react-navigation/native';
 
 import AppNavigator from './src/navigation/AppNavigator';
-import LoginScreen from './src/screens/LoginScreen';
-import { connectSocket } from './src/services/socketService';
 
+import LoginScreen from './src/screens/LoginScreen';
+
+import {
+  connectSocket,
+} from './src/services/socketService';
 
 const TOKEN_KEY = '@auth_token';
 
 const App = (): React.JSX.Element => {
-  const [token, setToken] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [token, setToken] =
+    useState<string | null>(null);
+
+  const [showLogin, setShowLogin] =
+    useState(false);
+
+  const [loading, setLoading] =
+    useState(true);
 
   useEffect(() => {
     const loadToken = async (): Promise<void> => {
       try {
-        const storedToken = await AsyncStorage.getItem(
-          TOKEN_KEY
-        );
+        const storedToken =
+          await AsyncStorage.getItem(
+            TOKEN_KEY
+          );
 
         if (storedToken) {
-  connectSocket(storedToken);
-}
+          connectSocket(storedToken);
+        }
 
-setToken(storedToken);
-
+        setToken(storedToken);
       } catch (error) {
         console.error(
           'Failed to load authentication token:',
@@ -54,7 +68,10 @@ setToken(storedToken);
         newToken
       );
 
+      connectSocket(newToken);
+
       setToken(newToken);
+      setShowLogin(false);
     } catch (error) {
       console.error(
         'Failed to save authentication token:',
@@ -63,9 +80,27 @@ setToken(storedToken);
     }
   };
 
+  const handleLogout = async (): Promise<void> => {
+    try {
+      await AsyncStorage.removeItem(
+        TOKEN_KEY
+      );
+
+      setToken(null);
+      setShowLogin(false);
+    } catch (error) {
+      console.error(
+        'Failed to logout:',
+        error
+      );
+    }
+  };
+
   if (loading) {
     return (
-      <SafeAreaView style={styles.loadingContainer}>
+      <SafeAreaView
+        style={styles.loadingContainer}
+      >
         <ActivityIndicator size="large" />
 
         <Text style={styles.loadingText}>
@@ -75,17 +110,25 @@ setToken(storedToken);
     );
   }
 
-  if (!token) {
+  if (showLogin) {
     return (
       <LoginScreen
-        onLoginSuccess={handleLoginSuccess}
+        onLoginSuccess={
+          handleLoginSuccess
+        }
       />
     );
   }
 
   return (
     <NavigationContainer>
-      <AppNavigator token={token} />
+      <AppNavigator
+        token={token}
+        onLoginPress={() =>
+          setShowLogin(true)
+        }
+        onLogout={handleLogout}
+      />
     </NavigationContainer>
   );
 };

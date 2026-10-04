@@ -1,8 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, {
+  useEffect,
+  useState,
+} from 'react';
+
 import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Image,
   SafeAreaView,
   StyleSheet,
   Text,
@@ -22,6 +27,18 @@ interface ContinueShoppingScreenProps {
   token?: string | null;
 }
 
+const COLORS = {
+  background: '#F8F6F1',
+  primary: '#6B8F71',
+  primaryDark: '#294936',
+  softGreen: '#E8F0E9',
+  softRose: '#F3E4E2',
+  card: '#FFFFFF',
+  text: '#243027',
+  secondaryText: '#718078',
+  border: '#E3E8E3',
+};
+
 const ContinueShoppingScreen = ({
   token,
 }: ContinueShoppingScreenProps): React.JSX.Element => {
@@ -37,20 +54,22 @@ const ContinueShoppingScreen = ({
       return;
     }
 
-    const loadContinueShopping = async (): Promise<void> => {
-      try {
-        const data = await getContinueShopping(token);
+    const loadContinueShopping =
+      async (): Promise<void> => {
+        try {
+          const data =
+            await getContinueShopping(token);
 
-        setProducts(data);
-      } catch (error) {
-        console.error(
-          'Failed to load continue shopping:',
-          error
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
+          setProducts(data);
+        } catch (error) {
+          console.error(
+            'Failed to load continue shopping:',
+            error
+          );
+        } finally {
+          setLoading(false);
+        }
+      };
 
     loadContinueShopping();
   }, [token]);
@@ -70,8 +89,8 @@ const ContinueShoppingScreen = ({
       await addToCart(token, productId);
 
       Alert.alert(
-        'Success',
-        'Product added to cart.'
+        'Added to Cart',
+        'Product added to your cart.'
       );
     } catch (error) {
       console.error(
@@ -101,8 +120,8 @@ const ContinueShoppingScreen = ({
       await addToWishlist(token, productId);
 
       Alert.alert(
-        'Success',
-        'Product added to wishlist.'
+        'Saved',
+        'Product added to your wishlist.'
       );
     } catch (error) {
       console.error(
@@ -120,8 +139,18 @@ const ContinueShoppingScreen = ({
   if (!token) {
     return (
       <SafeAreaView style={styles.center}>
+        <View style={styles.emptyIconContainer}>
+          <Text style={styles.emptyIcon}>
+            🛍️
+          </Text>
+        </View>
+
+        <Text style={styles.emptyTitle}>
+          Continue Shopping
+        </Text>
+
         <Text style={styles.emptyText}>
-          Please log in to view Continue Shopping.
+          Please log in to continue shopping.
         </Text>
       </SafeAreaView>
     );
@@ -130,10 +159,13 @@ const ContinueShoppingScreen = ({
   if (loading) {
     return (
       <SafeAreaView style={styles.center}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator
+          size="large"
+          color={COLORS.primary}
+        />
 
         <Text style={styles.loadingText}>
-          Loading Continue Shopping...
+          Finding products for you...
         </Text>
       </SafeAreaView>
     );
@@ -141,62 +173,113 @@ const ContinueShoppingScreen = ({
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>
-        Continue Shopping
-      </Text>
+      <View style={styles.header}>
+        <View style={styles.headerText}>
+          <Text style={styles.title}>
+            Continue Shopping
+          </Text>
+
+          <Text style={styles.subtitle}>
+            Pick up where you left off
+          </Text>
+        </View>
+
+        <View style={styles.headerIcon}>
+          <Text style={styles.headerEmoji}>
+            🛍️
+          </Text>
+        </View>
+      </View>
 
       {products.length === 0 ? (
         <View style={styles.center}>
+          <View style={styles.emptyIconContainer}>
+            <Text style={styles.emptyIcon}>
+              ✨
+            </Text>
+          </View>
+
+          <Text style={styles.emptyTitle}>
+            You're all caught up
+          </Text>
+
           <Text style={styles.emptyText}>
-            No products to continue shopping.
+            Products you view without purchasing
+            will appear here.
           </Text>
         </View>
       ) : (
         <FlatList
           data={products}
-          keyExtractor={(item) => item.product._id}
+          keyExtractor={(item) =>
+            item.product._id
+          }
+          numColumns={2}
+          columnWrapperStyle={styles.row}
           contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
           renderItem={({ item }) => (
             <View style={styles.card}>
-              <Text style={styles.productName}>
-                {item.product.name}
-              </Text>
+              <View style={styles.imageContainer}>
+                <Image
+                  source={{
+                    uri: item.product.image,
+                  }}
+                  style={styles.productImage}
+                  resizeMode="cover"
+                />
 
-              <Text style={styles.category}>
-                {item.product.category}
-              </Text>
+                <View style={styles.continueBadge}>
+                  <Text style={styles.continueBadgeText}>
+                    Continue
+                  </Text>
+                </View>
+              </View>
 
-              <Text style={styles.price}>
-                ₹{item.product.price}
-              </Text>
-
-              <Text style={styles.viewedAt}>
-                Viewed recently
-              </Text>
-
-              <TouchableOpacity
-                style={styles.cartButton}
-                onPress={() =>
-                  handleAddToCart(item.product._id)
-                }
-              >
-                <Text style={styles.buttonText}>
-                  Add to Cart
+              <View style={styles.productInfo}>
+                <Text
+                  style={styles.productName}
+                  numberOfLines={2}
+                >
+                  {item.product.name}
                 </Text>
-              </TouchableOpacity>
 
-              <TouchableOpacity
-                style={styles.wishlistButton}
-                onPress={() =>
-                  handleAddToWishlist(
-                    item.product._id
-                  )
-                }
-              >
-                <Text style={styles.wishlistText}>
-                  Add to Wishlist
+                <Text style={styles.category}>
+                  {item.product.category}
                 </Text>
-              </TouchableOpacity>
+
+                <Text style={styles.price}>
+                  ₹{item.product.price}
+                </Text>
+
+                <TouchableOpacity
+                  style={styles.cartButton}
+                  onPress={() =>
+                    handleAddToCart(
+                      item.product._id
+                    )
+                  }
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.cartButtonText}>
+                    Add to Cart
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.wishlistButton}
+                  onPress={() =>
+                    handleAddToWishlist(
+                      item.product._id
+                    )
+                  }
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.wishlistButtonText}>
+                    ♡ Wishlist
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
           )}
         />
@@ -208,86 +291,201 @@ const ContinueShoppingScreen = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: COLORS.background,
+  },
+
+  header: {
+    paddingHorizontal: 20,
+    paddingTop: 22,
+    paddingBottom: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+
+  headerText: {
+    flex: 1,
+  },
+
+  title: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: COLORS.primaryDark,
+  },
+
+  subtitle: {
+    marginTop: 5,
+    fontSize: 14,
+    color: COLORS.secondaryText,
+  },
+
+  headerIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.softGreen,
+  },
+
+  headerEmoji: {
+    fontSize: 25,
+  },
+
+  list: {
+    paddingHorizontal: 15,
+    paddingBottom: 30,
+  },
+
+  row: {
+    justifyContent: 'space-between',
+  },
+
+  card: {
+    flex: 1,
+    marginHorizontal: 5,
+    marginBottom: 16,
+    padding: 10,
+    borderRadius: 20,
+    backgroundColor: COLORS.card,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    shadowColor: '#294936',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+
+  imageContainer: {
+    position: 'relative',
+  },
+
+  productImage: {
+    width: '100%',
+    height: 150,
+    borderRadius: 16,
+    backgroundColor: COLORS.softGreen,
+  },
+
+  continueBadge: {
+    position: 'absolute',
+    top: 9,
+    left: 9,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 12,
+    backgroundColor: COLORS.primaryDark,
+  },
+
+  continueBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+
+  productInfo: {
+    paddingHorizontal: 4,
+    paddingTop: 10,
+  },
+
+  productName: {
+    fontSize: 16,
+    lineHeight: 21,
+    fontWeight: '800',
+    color: COLORS.text,
+  },
+
+  category: {
+    marginTop: 5,
+    fontSize: 12,
+    color: COLORS.secondaryText,
+  },
+
+  price: {
+    marginTop: 8,
+    marginBottom: 10,
+    fontSize: 18,
+    fontWeight: '800',
+    color: COLORS.primaryDark,
+  },
+
+  cartButton: {
+    minHeight: 40,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.primary,
+  },
+
+  cartButtonText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+
+  wishlistButton: {
+    minHeight: 38,
+    marginTop: 7,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.softRose,
+  },
+
+  wishlistButtonText: {
+    color: COLORS.primaryDark,
+    fontSize: 12,
+    fontWeight: '700',
   },
 
   center: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 20,
+    padding: 30,
+    backgroundColor: COLORS.background,
   },
 
   loadingText: {
     marginTop: 10,
+    fontSize: 15,
+    color: COLORS.secondaryText,
   },
 
-  emptyText: {
-    fontSize: 16,
+  emptyIconContainer: {
+    width: 82,
+    height: 82,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+    backgroundColor: COLORS.softGreen,
+  },
+
+  emptyIcon: {
+    fontSize: 38,
+  },
+
+  emptyTitle: {
+    fontSize: 23,
+    fontWeight: '800',
+    color: COLORS.primaryDark,
+    marginBottom: 8,
     textAlign: 'center',
   },
 
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    padding: 20,
-  },
-
-  list: {
-    padding: 20,
-    paddingBottom: 30,
-  },
-
-  card: {
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 12,
-  },
-
-  productName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-
-  category: {
-    marginTop: 6,
+  emptyText: {
+    maxWidth: 310,
     fontSize: 14,
-  },
-
-  price: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-
-  viewedAt: {
-    marginTop: 6,
-    fontSize: 13,
-  },
-
-  cartButton: {
-    marginTop: 14,
-    padding: 12,
-    borderRadius: 6,
-    alignItems: 'center',
-    backgroundColor: '#222',
-  },
-
-  buttonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-
-  wishlistButton: {
-    marginTop: 8,
-    padding: 12,
-    borderWidth: 1,
-    borderRadius: 6,
-    alignItems: 'center',
-  },
-
-  wishlistText: {
-    fontWeight: 'bold',
+    lineHeight: 21,
+    color: COLORS.secondaryText,
+    textAlign: 'center',
   },
 });
 
