@@ -165,6 +165,26 @@ function App() {
 
   const [showLogin, setShowLogin] =
     useState(false);
+  
+  const [showRegister, setShowRegister] =
+  useState(false);
+
+const [registerName, setRegisterName] =
+  useState('');
+
+const [registerEmail, setRegisterEmail] =
+  useState('');
+
+const [registerPassword, setRegisterPassword] =
+  useState('');
+
+const [registerLoading, setRegisterLoading] =
+  useState(false);
+
+const [registerError, setRegisterError] =
+  useState('');
+
+
 
   const [showOrderSuccess, setShowOrderSuccess] =
     useState(false);
@@ -815,6 +835,109 @@ function App() {
       setLoginLoading(false);
     }
   };
+
+  const handleRegister = async (event) => {
+  event.preventDefault();
+
+  if (
+    !registerName.trim() ||
+    !registerEmail.trim() ||
+    !registerPassword
+  ) {
+    setRegisterError(
+      'Please enter your name, email and password.'
+    );
+    return;
+  }
+
+  if (registerPassword.length < 6) {
+    setRegisterError(
+      'Password must be at least 6 characters.'
+    );
+    return;
+  }
+
+  try {
+    setRegisterLoading(true);
+    setRegisterError('');
+
+    const response = await fetch(
+      `${API_BASE_URL}/auth/register`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: registerName.trim(),
+          email: registerEmail.trim(),
+          password: registerPassword,
+        }),
+      }
+    );
+
+    const result = await readJson(response);
+
+    const newToken =
+      result.data?.token ||
+      result.token;
+
+    const newUser =
+      result.data?.user ||
+      result.user;
+
+    if (!newToken) {
+      throw new Error(
+        'Registration succeeded but no token was returned.'
+      );
+    }
+
+    localStorage.setItem(
+      'shopEasyToken',
+      newToken
+    );
+
+    if (newUser) {
+      localStorage.setItem(
+        'shopEasyUser',
+        JSON.stringify(newUser)
+      );
+    }
+
+    setToken(newToken);
+    setUser(newUser || null);
+
+    setRegisterName('');
+    setRegisterEmail('');
+    setRegisterPassword('');
+    setRegisterError('');
+    setShowRegister(false);
+
+    // Load the newly registered user's data
+    setTimeout(async () => {
+      try {
+        await loadAllUserData();
+      } catch (error) {
+        console.error(
+          'Post-registration data loading error:',
+          error
+        );
+      }
+    }, 0);
+  } catch (err) {
+    console.error(
+      'Registration error:',
+      err
+    );
+
+    setRegisterError(
+      err.message ||
+        'Registration failed. Please try again.'
+    );
+  } finally {
+    setRegisterLoading(false);
+  }
+};
 
   /* =======================================================
      LOGOUT
@@ -2245,115 +2368,253 @@ function App() {
       =================================================== */}
 
       {showLogin && (
-        <div
-          className="modal-overlay"
-          onClick={() => {
-            if (!loginLoading) {
-              setShowLogin(false);
-              setLoginError('');
+  <div
+    className="modal-overlay"
+    onClick={() => {
+      if (!loginLoading) {
+        setShowLogin(false);
+        setLoginError('');
+      }
+    }}
+  >
+    <div
+      className="login-modal"
+      onClick={(event) =>
+        event.stopPropagation()
+      }
+    >
+      <button
+        className="modal-close"
+        onClick={() => {
+          if (!loginLoading) {
+            setShowLogin(false);
+            setLoginError('');
+          }
+        }}
+      >
+        ×
+      </button>
+
+      <div className="login-icon">
+        🛍️
+      </div>
+
+      <h2>Welcome to ShopEasy</h2>
+
+      <p className="login-subtitle">
+        Login to continue shopping
+      </p>
+
+      <form onSubmit={handleLogin}>
+        <div className="form-group">
+          <label htmlFor="email">
+            Email
+          </label>
+
+          <input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(event) =>
+              setEmail(event.target.value)
             }
-          }}
-        >
-          <div
-            className="login-modal"
-            onClick={(event) =>
-              event.stopPropagation()
-            }
-          >
-            <button
-              type="button"
-              className="modal-close"
-              onClick={() => {
-                if (!loginLoading) {
-                  setShowLogin(false);
-                  setLoginError('');
-                }
-              }}
-            >
-              ×
-            </button>
-
-            <div className="login-icon">
-              🛍️
-            </div>
-
-            <h2>
-              Welcome to ShopEasy
-            </h2>
-
-            <p className="login-subtitle">
-              Login to continue
-              shopping
-            </p>
-
-            <form
-              onSubmit={handleLogin}
-            >
-              <div className="form-group">
-                <label htmlFor="email">
-                  Email
-                </label>
-
-                <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(event) =>
-                    setEmail(
-                      event.target.value
-                    )
-                  }
-                  placeholder="Enter your email"
-                  disabled={
-                    loginLoading
-                  }
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="password">
-                  Password
-                </label>
-
-                <input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(event) =>
-                    setPassword(
-                      event.target.value
-                    )
-                  }
-                  placeholder="Enter your password"
-                  disabled={
-                    loginLoading
-                  }
-                  required
-                />
-              </div>
-
-              {loginError && (
-                <div className="login-error">
-                  {loginError}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                className="primary-button login-submit"
-                disabled={
-                  loginLoading
-                }
-              >
-                {loginLoading
-                  ? 'Logging in...'
-                  : 'Login'}
-              </button>
-            </form>
-          </div>
+            placeholder="Enter your email"
+            disabled={loginLoading}
+            required
+          />
         </div>
-      )}
+
+        <div className="form-group">
+          <label htmlFor="password">
+            Password
+          </label>
+
+          <input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(event) =>
+              setPassword(event.target.value)
+            }
+            placeholder="Enter your password"
+            disabled={loginLoading}
+            required
+          />
+        </div>
+
+        {loginError && (
+          <div className="login-error">
+            {loginError}
+          </div>
+        )}
+
+        <button
+          type="submit"
+          className="primary-button login-submit"
+          disabled={loginLoading}
+        >
+          {loginLoading
+            ? 'Logging in...'
+            : 'Login'}
+        </button>
+      </form>
+
+      <div className="register-divider">
+        <span>Don't have an account?</span>
+      </div>
+
+      <button
+        type="button"
+        className="register-link-button"
+        disabled={loginLoading}
+        onClick={() => {
+          setShowLogin(false);
+          setLoginError('');
+          setShowRegister(true);
+          setRegisterError('');
+        }}
+      >
+        Register
+      </button>
+    </div>
+  </div>
+)}
+{showRegister && (
+  <div
+    className="modal-overlay"
+    onClick={() => {
+      if (!registerLoading) {
+        setShowRegister(false);
+        setRegisterError('');
+      }
+    }}
+  >
+    <div
+      className="login-modal"
+      onClick={(event) =>
+        event.stopPropagation()
+      }
+    >
+      <button
+        className="modal-close"
+        onClick={() => {
+          if (!registerLoading) {
+            setShowRegister(false);
+            setRegisterError('');
+          }
+        }}
+      >
+        ×
+      </button>
+
+      <div className="login-icon">
+        🛍️
+      </div>
+
+      <h2>Create Account</h2>
+
+      <p className="login-subtitle">
+        Register to start shopping
+      </p>
+
+      <form onSubmit={handleRegister}>
+        <div className="form-group">
+          <label htmlFor="registerName">
+            Name
+          </label>
+
+          <input
+            id="registerName"
+            type="text"
+            value={registerName}
+            onChange={(event) =>
+              setRegisterName(
+                event.target.value
+              )
+            }
+            placeholder="Enter your name"
+            disabled={registerLoading}
+            required
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="registerEmail">
+            Email
+          </label>
+
+          <input
+            id="registerEmail"
+            type="email"
+            value={registerEmail}
+            onChange={(event) =>
+              setRegisterEmail(
+                event.target.value
+              )
+            }
+            placeholder="Enter your email"
+            disabled={registerLoading}
+            required
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="registerPassword">
+            Password
+          </label>
+
+          <input
+            id="registerPassword"
+            type="password"
+            value={registerPassword}
+            onChange={(event) =>
+              setRegisterPassword(
+                event.target.value
+              )
+            }
+            placeholder="Minimum 6 characters"
+            disabled={registerLoading}
+            required
+          />
+        </div>
+
+        {registerError && (
+          <div className="login-error">
+            {registerError}
+          </div>
+        )}
+
+        <button
+          type="submit"
+          className="primary-button login-submit"
+          disabled={registerLoading}
+        >
+          {registerLoading
+            ? 'Creating account...'
+            : 'Register'}
+        </button>
+      </form>
+
+      <div className="register-divider">
+        <span>Already have an account?</span>
+      </div>
+
+      <button
+        type="button"
+        className="register-link-button"
+        disabled={registerLoading}
+        onClick={() => {
+          setShowRegister(false);
+          setRegisterError('');
+          setShowLogin(true);
+          setLoginError('');
+        }}
+      >
+        Login
+      </button>
+    </div>
+  </div>
+)}
 
     </div>
   );
