@@ -75,6 +75,8 @@ export const register = async (
 };
 
 // Login
+// If the email does not exist, automatically create the account.
+// If the email already exists, verify the password normally.
 export const login = async (
   req: Request,
   res: Response
@@ -89,19 +91,49 @@ export const login = async (
       return;
     }
 
-    const normalizedEmail = email.toLowerCase().trim();
-
-    const user = await User.findOne({
-      email: normalizedEmail,
-    }).select('+password');
-
-    if (!user) {
-      res.status(401).json({
-        message: 'Invalid email or password',
+    if (password.length < 6) {
+      res.status(400).json({
+        message: 'Password must be at least 6 characters',
       });
       return;
     }
 
+    const normalizedEmail = email.toLowerCase().trim();
+
+    let user = await User.findOne({
+      email: normalizedEmail,
+    }).select('+password');
+
+    // --------------------------------------------------
+    // FIRST LOGIN
+    // Email does not exist -> create a new account
+    // --------------------------------------------------
+    if (!user) {
+      user = await User.create({
+        name: normalizedEmail.split('@')[0],
+        email: normalizedEmail,
+        password,
+      });
+
+      const token = generateToken(user._id.toString());
+
+      res.status(201).json({
+        message: 'Account created and login successful',
+        token,
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+        },
+      });
+
+      return;
+    }
+
+    // --------------------------------------------------
+    // EXISTING USER
+    // Verify password
+    // --------------------------------------------------
     const isPasswordValid = await user.comparePassword(password);
 
     if (!isPasswordValid) {
