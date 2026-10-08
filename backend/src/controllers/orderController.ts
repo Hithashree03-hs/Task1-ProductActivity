@@ -85,6 +85,11 @@ export const createOrder = async (
 
   const { items } = req.body;
 
+  if (req.body?.paymentMethod && req.body.paymentMethod !== 'CASH_ON_DELIVERY') {
+    res.status(400).json({ message: 'Use the secure payment checkout for online payments' });
+    return;
+  }
+
   if (!Array.isArray(items) || items.length === 0) {
     res.status(400).json({
       message: 'Order items are required',
@@ -357,7 +362,7 @@ if (
             userId,
             items: orderItems,
             totalAmount,
-            paymentMethod: req.body?.paymentMethod || 'CASH_ON_DELIVERY',
+            paymentMethod: 'CASH_ON_DELIVERY',
             paymentStatus: 'PENDING',
             invoiceNumber: `INV-${Date.now()}-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
             status: 'PROCESSING',

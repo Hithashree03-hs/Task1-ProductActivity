@@ -210,10 +210,20 @@ Set these variables in the backend deployment environment. Do not commit real se
 - `JWT_SECRET`: strong secret used to sign authentication tokens.
 - `PUSH_TOKEN_ENCRYPTION_KEY`: random secret with at least 32 characters. Expo device tokens are encrypted at rest with AES-GCM; changing this key makes already stored tokens unreadable, so rotate by re-registering devices.
 - `EXPO_ACCESS_TOKEN`: optional Expo access token for authenticated Expo push API requests.
-- `PAYMENT_WEBHOOK_SECRET`: at least 32 characters, shared with the payment provider or adapter.
+- `RAZORPAY_KEY_ID`: Razorpay test/live key ID. The key ID is public and returned to the app for checkout.
+- `RAZORPAY_KEY_SECRET`: Razorpay API key secret. Keep it on the backend; it creates Razorpay orders and verifies checkout callbacks.
+- `RAZORPAY_WEBHOOK_SECRET`: webhook secret configured for the webhook URL in Razorpay Dashboard.
 - `INTERNAL_EVENTS_SECRET`: at least 32 characters, shared with the trusted order/product event producer.
 
-Scheduled jobs are started with the API process: scheduled push dispatch runs every minute, abandoned-cart scheduling every five minutes, and Expo receipt checks every fifteen minutes. Run one API scheduler instance, or add a distributed job lock before scaling the API horizontally.
+Scheduled jobs are started with the API process: push dispatch and expired payment-intent cleanup run every minute, abandoned-cart scheduling every five minutes, and Expo receipt checks every fifteen minutes. Run one API scheduler instance, or add a distributed job lock before scaling the API horizontally.
+
+## Razorpay checkout and UPI
+
+The mobile cart offers Cash on Delivery and Razorpay online checkout (UPI apps, cards and wallets, according to the payment methods enabled in your Razorpay account). The server validates the cart and creates Razorpay Orders; it never accepts the amount or provider order ID from the app as authority. After checkout, the server verifies the Razorpay signature and fetches the payment from Razorpay before creating the paid store order and reducing stock. Configure automatic payment capture in Razorpay Dashboard.
+
+The app uses the native `react-native-razorpay` SDK. Rebuild the native app after adding or changing native payment configuration. The public Razorpay key ID comes from the authenticated backend; never put `RAZORPAY_KEY_SECRET` in the mobile app.
+
+Create an Expo project from the `mobile` folder with `npx eas-cli init`, then build an internal Android APK with `npx eas-cli build --platform android --profile preview`. Set `EXPO_PUBLIC_EAS_PROJECT_ID` to the project UUID for push-token registration. Configure Firebase Cloud Messaging credentials in EAS for Android push delivery. Store test keys and webhook secrets in local/deployment environment settings, not Git.
 
 ## Mobile push setup
 
@@ -221,15 +231,11 @@ Configure `EXPO_PUBLIC_EAS_PROJECT_ID` with the EAS project UUID before building
 
 ## Webhook signatures and event formats
 
-Both endpoints sign the exact raw UTF-8 request body with HMAC-SHA256 and send the lowercase or uppercase hex digest in the header shown. The server compares signatures in constant time and rejects missing/invalid signatures. Each event ID is idempotent.
+Both webhook endpoints sign the exact raw UTF-8 request body with HMAC-SHA256 and send the lowercase or uppercase hex digest in the header shown. The server compares signatures in constant time and rejects missing/invalid signatures. Each event ID is idempotent.
 
-Payment endpoint: `POST /api/webhooks/payment`, header `x-payment-signature`.
+Razorpay endpoint: `POST /api/webhooks/razorpay`, header `x-razorpay-signature`; the unique event ID is read from `x-razorpay-event-id`. Configure `payment.captured`, `payment.failed`, and `refund.processed` in Razorpay Dashboard. Captured events are checked against the server-created payment intent and recorded in `PaymentEvent` before the order is finalized. If captured payment arrives after the checkout expires or stock is no longer available, the backend requests a refund.
 
-```json
-{"id":"provider-event-123","type":"payment.succeeded","data":{"orderId":"MONGODB_ORDER_ID","amount":1299,"currency":"INR"}}
-```
-
-Supported payment event types are `payment.succeeded`, `payment.failed`, and `payment.refunded`. Success validates amount and currency against the order before recording the event and changing payment state.
+Authenticated checkout endpoints: `POST /api/payments/razorpay/intents` creates an intent from the current cart; `POST /api/payments/razorpay/intents/:intentId/verify` verifies a successful native checkout callback. Direct `POST /api/orders` accepts Cash on Delivery only.
 
 Internal event endpoint: `POST /api/internal/events`, header `x-internal-signature`.
 

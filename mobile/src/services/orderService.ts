@@ -4,6 +4,8 @@ export interface OrderItemRequest {
   productId: string;
   quantity: number;
   price?: number;
+  size?: string;
+  color?: string;
 }
 
 export interface CreateOrderResponse {
@@ -17,13 +19,15 @@ export interface CreateOrderResponse {
 
 export const createOrder = async (
   token: string,
-  items: OrderItemRequest[]
+  items: OrderItemRequest[],
+  paymentMethod: 'CASH_ON_DELIVERY' | 'RAZORPAY' = 'CASH_ON_DELIVERY',
 ): Promise<CreateOrderResponse> => {
   const response =
     await apiClient.post<CreateOrderResponse>(
       '/orders',
       {
         items,
+        paymentMethod,
       },
       {
         headers: {
@@ -32,6 +36,32 @@ export const createOrder = async (
       }
     );
 
+  return response.data;
+};
+
+export interface RazorpayIntent {
+  paymentIntentId: string;
+  keyId: string;
+  providerOrderId: string;
+  amount: number;
+  currency: 'INR';
+}
+
+export const createRazorpayIntent = async (token: string): Promise<RazorpayIntent> => {
+  const response = await apiClient.post<RazorpayIntent>('/payments/razorpay/intents', {}, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return response.data;
+};
+
+export const verifyRazorpayPayment = async (
+  token: string,
+  paymentIntentId: string,
+  payment: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string },
+): Promise<CreateOrderResponse> => {
+  const response = await apiClient.post<CreateOrderResponse>(`/payments/razorpay/intents/${paymentIntentId}/verify`, payment, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
   return response.data;
 };
 

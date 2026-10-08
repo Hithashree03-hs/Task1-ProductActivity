@@ -5,7 +5,6 @@ import Order from '../models/Order';
 import Product from '../models/Product';
 import Wishlist from '../models/Wishlist';
 import User from '../models/User';
-import PaymentEvent from '../models/PaymentEvent';
 import InternalEvent from '../models/InternalEvent';
 import { sendNotification } from './notificationController';
 
@@ -19,32 +18,6 @@ const verifySignature = (body: Buffer, signature: unknown, secretName: string): 
 const parseBody = (req: Request): Record<string, any> | null => {
   if (!Buffer.isBuffer(req.body)) return null;
   try { return JSON.parse(req.body.toString('utf8')); } catch { return null; }
-};
-
-export const paymentWebhook = async (req: Request, res: Response): Promise<void> => {
-  const body = parseBody(req);
-  if (!body || !verifySignature(req.body as Buffer, req.header('x-payment-signature'), 'PAYMENT_WEBHOOK_SECRET')) { res.status(401).json({ message: 'Invalid payment webhook signature' }); return; }
-  if (typeof body.id !== 'string' || typeof body.type !== 'string' || !mongoose.Types.ObjectId.isValid(body.data?.orderId)) { res.status(400).json({ message: 'Invalid payment event' }); return; }
-  if (!['payment.succeeded', 'payment.failed', 'payment.refunded'].includes(body.type)) { res.status(400).json({ message: 'Unsupported payment event type' }); return; }
-  const session = await mongoose.startSession(); let owner = '';
-  try {
-    await session.withTransaction(async () => {
-      const previous = await PaymentEvent.findOne({ providerEventId: body.id }).session(session);
-      if (previous) return;
-      const order = await Order.findById(body.data.orderId).session(session);
-      if (!order) throw new Error('Order not found');
-      if (body.type === 'payment.succeeded' && (Number(body.data.amount) !== order.totalAmount || (body.data.currency && body.data.currency !== 'INR'))) throw new Error('Payment amount or currency does not match order');
-      await PaymentEvent.create([{ providerEventId: body.id, orderId: order._id, type: body.type, payload: body }], { session });
-      order.paymentStatus = body.type === 'payment.succeeded' ? 'PAID' : body.type === 'payment.refunded' ? 'REFUNDED' : 'FAILED';
-      order.deliveryTimeline.push({ status: `PAYMENT_${order.paymentStatus}`, note: `Payment provider event ${body.type}`, at: new Date() } as any);
-      await order.save({ session }); owner = order.userId.toString();
-    });
-    if (owner) await sendNotification(owner, 'payment', 'Payment update', `Payment status: ${body.type.split('.')[1]}.`);
-    res.status(200).json({ received: true });
-  } catch (error) {
-    if ((error as any)?.code === 11000) { res.status(200).json({ received: true, duplicate: true }); return; }
-    res.status(400).json({ message: error instanceof Error ? error.message : 'Payment event failed' });
-  } finally { await session.endSession(); }
 };
 
 export const internalEventWebhook = async (req: Request, res: Response): Promise<void> => {

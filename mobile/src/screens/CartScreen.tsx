@@ -21,7 +21,10 @@ import {
 
 import {
   createOrder,
+  createRazorpayIntent,
+  verifyRazorpayPayment,
 } from '../services/orderService';
+import RazorpayCheckout from 'react-native-razorpay';
 import { getSocket } from '../services/socketService';
 import { useTheme } from '../theme/ThemeProvider';
 import { ThemeColors } from '../theme/theme';
@@ -48,6 +51,7 @@ const CartScreen = ({
 
   const [placingOrder, setPlacingOrder] =
     useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<'CASH_ON_DELIVERY' | 'RAZORPAY'>('CASH_ON_DELIVERY');
 
   const totalAmount = items.reduce(
     (total, item) =>
@@ -219,12 +223,26 @@ const CartScreen = ({
             productId: item.productId!._id,
             quantity: item.quantity,
             price: item.productId!.price,
+            size: item.size,
+            color: item.color,
           }));
 
-        await createOrder(
-          token,
-          orderItems
-        );
+        if (paymentMethod === 'RAZORPAY') {
+          const intent = await createRazorpayIntent(token);
+          const payment = await RazorpayCheckout.open({
+            key: intent.keyId,
+            amount: String(intent.amount),
+            currency: intent.currency,
+            name: 'ShopEasy',
+            description: 'Payment for your shopping cart',
+            order_id: intent.providerOrderId,
+            theme: { color: colors.primaryDark },
+            retry: { enabled: true, max_count: 2 },
+          });
+          await verifyRazorpayPayment(token, intent.paymentIntentId, payment);
+        } else {
+          await createOrder(token, orderItems, paymentMethod);
+        }
 
         setItems([]);
 
@@ -468,6 +486,30 @@ const CartScreen = ({
           </Text>
         </View>
 
+        <Text style={styles.paymentLabel}>Payment method</Text>
+        <View style={styles.paymentOptions}>
+          <TouchableOpacity
+            style={[styles.paymentOption, paymentMethod === 'CASH_ON_DELIVERY' && styles.paymentOptionSelected]}
+            onPress={() => setPaymentMethod('CASH_ON_DELIVERY')}
+            disabled={placingOrder}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: paymentMethod === 'CASH_ON_DELIVERY' }}
+          >
+            <Text style={styles.paymentOptionTitle}>Cash on delivery</Text>
+            <Text style={styles.paymentOptionDetail}>Pay when your order arrives</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.paymentOption, paymentMethod === 'RAZORPAY' && styles.paymentOptionSelected]}
+            onPress={() => setPaymentMethod('RAZORPAY')}
+            disabled={placingOrder}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: paymentMethod === 'RAZORPAY' }}
+          >
+            <Text style={styles.paymentOptionTitle}>UPI and online payment</Text>
+            <Text style={styles.paymentOptionDetail}>UPI apps, cards and wallets via Razorpay</Text>
+          </TouchableOpacity>
+        </View>
+
         <TouchableOpacity
           style={[
             styles.placeOrderButton,
@@ -480,8 +522,8 @@ const CartScreen = ({
         >
           <Text style={styles.placeOrderText}>
             {placingOrder
-              ? 'Placing Order...'
-              : 'Place Order'}
+              ? (paymentMethod === 'RAZORPAY' ? 'Opening secure checkout…' : 'Placing Order...')
+              : (paymentMethod === 'RAZORPAY' ? 'Continue to payment' : 'Place Order')}
           </Text>
         </TouchableOpacity>
       </View>
@@ -652,6 +694,13 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
+
+  paymentLabel: { color: c.text, fontSize: 14, fontWeight: '800', marginBottom: 8 },
+  paymentOptions: { gap: 8, marginBottom: 14 },
+  paymentOption: { borderWidth: 1, borderColor: c.border, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 9, backgroundColor: c.surface },
+  paymentOptionSelected: { borderColor: c.primary, backgroundColor: c.surfaceAlt },
+  paymentOptionTitle: { color: c.text, fontSize: 13, fontWeight: '800' },
+  paymentOptionDetail: { color: c.muted, fontSize: 11, marginTop: 2 },
 
   totalLabel: {
     fontSize: 16,

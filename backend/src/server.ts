@@ -16,15 +16,18 @@ import orderRoutes from './routes/orderRoutes';
 import recommendationRoutes from './routes/recommendationRoutes';
 import preferencesRoutes from './routes/preferencesRoutes';
 import notificationRoutes from './routes/notificationRoutes';
+import paymentRoutes from './routes/paymentRoutes';
 import { dispatchScheduledNotifications, processPushReceipts, scheduleAbandonedCartReminders } from './controllers/notificationController';
-import { internalEventWebhook, paymentWebhook } from './controllers/webhookController';
+import { internalEventWebhook } from './controllers/webhookController';
+import { razorpayWebhook } from './controllers/razorpayController';
+import { expirePendingPaymentIntents } from './controllers/razorpayController';
 
 dotenv.config();
 
 const app = express();
 
 app.use(cors());
-app.post('/api/webhooks/payment', express.raw({ type: 'application/json', limit: '256kb' }), paymentWebhook);
+app.post('/api/webhooks/razorpay', express.raw({ type: 'application/json', limit: '256kb' }), razorpayWebhook);
 app.post('/api/internal/events', express.raw({ type: 'application/json', limit: '256kb' }), internalEventWebhook);
 app.use(express.json());
 
@@ -56,6 +59,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/recommendations', recommendationRoutes);
 app.use('/api/preferences', preferencesRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/payments', paymentRoutes);
 
 const PORT = process.env.PORT || 5000;
 
@@ -66,6 +70,7 @@ const startServer = async (): Promise<void> => {
     setInterval(() => { void dispatchScheduledNotifications().catch((error) => console.error('Scheduled notification dispatch failed:', error)); }, 60_000);
     setInterval(() => { void scheduleAbandonedCartReminders().catch((error) => console.error('Cart reminder scheduling failed:', error)); }, 5 * 60_000);
     setInterval(() => { void processPushReceipts().catch((error) => console.error('Expo receipt processing failed:', error)); }, 15 * 60_000);
+    setInterval(() => { void expirePendingPaymentIntents().catch((error) => console.error('Payment intent expiry failed:', error)); }, 60_000);
 
     const httpServer = createServer(app);
 

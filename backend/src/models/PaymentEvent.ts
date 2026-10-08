@@ -2,7 +2,8 @@ import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IPaymentEvent extends Document {
   providerEventId: string;
-  orderId: mongoose.Types.ObjectId;
+  orderId?: mongoose.Types.ObjectId;
+  intentId?: mongoose.Types.ObjectId;
   type: string;
   payload: Record<string, unknown>;
   processedAt: Date;
@@ -10,7 +11,8 @@ export interface IPaymentEvent extends Document {
 
 const schema = new Schema<IPaymentEvent>({
   providerEventId: { type: String, required: true, unique: true },
-  orderId: { type: Schema.Types.ObjectId, ref: 'Order', required: true },
+  orderId: { type: Schema.Types.ObjectId, ref: 'Order' },
+  intentId: { type: Schema.Types.ObjectId, ref: 'PaymentIntent' },
   type: { type: String, required: true },
   payload: { type: Schema.Types.Mixed, required: true },
   processedAt: { type: Date, default: Date.now },

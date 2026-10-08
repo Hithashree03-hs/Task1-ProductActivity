@@ -15,6 +15,8 @@ export interface IOrder extends Document {
   status: 'PENDING' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'COMPLETED' | 'CANCELLED' | 'RETURN_REQUESTED' | 'RETURNED';
   paymentMethod: string;
   paymentStatus: 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED';
+  providerOrderId?: string;
+  providerPaymentId?: string;
   invoiceNumber: string;
   deliveryTimeline: Array<{ status: string; note: string; at: Date }>;
   cancellationReason?: string;
@@ -83,8 +85,10 @@ const orderSchema = new Schema<IOrder>(
       enum: ['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'COMPLETED', 'CANCELLED', 'RETURN_REQUESTED', 'RETURNED'],
       default: 'PROCESSING',
     },
-    paymentMethod: { type: String, enum: ['CASH_ON_DELIVERY', 'CARD', 'UPI', 'WALLET'], default: 'CASH_ON_DELIVERY' },
+    paymentMethod: { type: String, enum: ['CASH_ON_DELIVERY', 'CARD', 'UPI', 'WALLET', 'RAZORPAY'], default: 'CASH_ON_DELIVERY' },
     paymentStatus: { type: String, enum: ['PENDING', 'PAID', 'FAILED', 'REFUNDED'], default: 'PENDING' },
+    providerOrderId: { type: String, sparse: true, unique: true },
+    providerPaymentId: { type: String, sparse: true, unique: true },
     invoiceNumber: { type: String, unique: true, sparse: true },
     deliveryTimeline: [{ status: { type: String, required: true }, note: { type: String, default: '' }, at: { type: Date, default: Date.now } }],
     cancellationReason: { type: String, trim: true, maxlength: 500 },
