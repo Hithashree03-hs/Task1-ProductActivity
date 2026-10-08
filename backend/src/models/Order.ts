@@ -4,6 +4,8 @@ export interface IOrderItem {
   productId: mongoose.Types.ObjectId;
   quantity: number;
   price: number;
+  size?: string;
+  color?: string;
 }
 
 export interface IOrder extends Document {
@@ -31,6 +33,16 @@ const orderItemSchema = new Schema<IOrderItem>(
       type: Number,
       required: true,
       min: 0,
+    },
+
+    size: {
+      type: String,
+      trim: true,
+    },
+
+    color: {
+      type: String,
+      trim: true,
     },
   },
   {

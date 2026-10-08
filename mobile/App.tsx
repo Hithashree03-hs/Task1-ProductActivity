@@ -19,6 +19,7 @@ import LoginScreen from './src/screens/LoginScreen';
 
 import {
   connectSocket,
+  disconnectSocket,
 } from './src/services/socketService';
 
 const TOKEN_KEY = '@auth_token';
@@ -86,6 +87,7 @@ const App = (): React.JSX.Element => {
         TOKEN_KEY
       );
 
+      disconnectSocket();
       setToken(null);
       setShowLogin(false);
     } catch (error) {

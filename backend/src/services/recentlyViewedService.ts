@@ -5,7 +5,7 @@ import Product from '../models/Product';
 import mongoose from 'mongoose';
 import { getIO } from '../sockets/server';
 
-const MAX_RECENTLY_VIEWED = 20;
+const MAX_RECENTLY_VIEWED = 50;
 
 /**
  * Record a product view for a logged-in user.
@@ -34,22 +34,19 @@ export const recordProductView = async (
     }
   );
 
-  // Keep only the latest 20 viewed products.
+  // Keep only the latest 50 viewed products.
   const activities = await ProductActivity.find({
     userId: new mongoose.Types.ObjectId(userId),
     activityType: ActivityType.VIEW,
   })
     .sort({ viewedAt: -1 })
+    .skip(MAX_RECENTLY_VIEWED)
     .select('_id')
     .lean();
 
-  if (activities.length > MAX_RECENTLY_VIEWED) {
-    const idsToDelete = activities
-      .slice(MAX_RECENTLY_VIEWED)
-      .map((activity) => activity._id);
-
+  if (activities.length > 0) {
     await ProductActivity.deleteMany({
-      _id: { $in: idsToDelete },
+      _id: { $in: activities.map((activity) => activity._id) },
     });
   }
 

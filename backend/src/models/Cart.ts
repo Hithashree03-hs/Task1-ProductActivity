@@ -1,8 +1,13 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
 export interface ICartItem {
+  _id?: mongoose.Types.ObjectId;
   productId: mongoose.Types.ObjectId;
   quantity: number;
+  priceAtAdd?: number;
+  size?: string;
+  color?: string;
+  savedForLater: boolean;
 }
 
 export interface ICart extends Document {
@@ -24,9 +29,30 @@ const cartItemSchema = new Schema<ICartItem>(
       min: 1,
       default: 1,
     },
+
+    priceAtAdd: {
+      type: Number,
+      min: 0,
+    },
+
+    size: {
+      type: String,
+      trim: true,
+    },
+
+    color: {
+      type: String,
+      trim: true,
+    },
+
+    savedForLater: {
+      type: Boolean,
+      required: true,
+      default: false,
+    },
   },
   {
-    _id: false,
+    _id: true,
   }
 );
 

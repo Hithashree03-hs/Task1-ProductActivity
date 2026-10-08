@@ -12,11 +12,47 @@ export interface CartItem {
   _id?: string;
   productId: CartProduct | null;
   quantity: number;
+  savedForLater?: boolean;
+  size?: string;
+  color?: string;
 }
 
 export interface CartData {
   items: CartItem[];
 }
+
+export interface CartValidationIssue {
+  itemId: string;
+  productId: string;
+  productName: string;
+  type: 'unavailable' | 'stock' | 'price';
+  availableStock?: number;
+  quantity?: number;
+  oldPrice?: number;
+  newPrice?: number;
+}
+
+export interface CartValidationResult {
+  valid: boolean;
+  issues: CartValidationIssue[];
+  cart: CartData;
+}
+
+export const validateCart = async (
+  token: string
+): Promise<CartValidationResult> => {
+  const response = await apiClient.post<CartValidationResult>(
+    '/cart/validate',
+    {},
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  return response.data;
+};
 
 export const addToCart = async (
   token: string,
