@@ -10,6 +10,9 @@ import RecentlyViewedScreen from '../screens/RecentlyViewedScreen';
 import ContinueShoppingScreen from '../screens/ContinueShoppingScreen';
 import CartScreen from '../screens/CartScreen';
 import WishlistScreen from '../screens/WishlistScreen';
+import RecommendationsScreen from '../screens/RecommendationsScreen';
+import PreferencesScreen from '../screens/PreferencesScreen';
+import OrderHistoryScreen from '../screens/OrderHistoryScreen';
 
 export type RootStackParamList = {
   Products: undefined;
@@ -26,6 +29,9 @@ export type RootStackParamList = {
   Cart: undefined;
 
   Wishlist: undefined;
+  Recommendations: undefined;
+  Preferences: undefined;
+  Orders: undefined;
 };
 
 interface AppNavigatorProps {
@@ -119,6 +125,16 @@ const AppNavigator = ({
             token={token}
           />
         )}
+      </Stack.Screen>
+
+      <Stack.Screen name="Recommendations" options={{ title: 'For You' }}>
+        {(props) => <RecommendationsScreen navigation={props.navigation} token={token} />}
+      </Stack.Screen>
+      <Stack.Screen name="Preferences" options={{ title: 'Personalization' }}>
+        {() => <PreferencesScreen token={token} />}
+      </Stack.Screen>
+      <Stack.Screen name="Orders" options={{ title: 'Order history' }}>
+        {() => <OrderHistoryScreen token={token} />}
       </Stack.Screen>
     </Stack.Navigator>
   );

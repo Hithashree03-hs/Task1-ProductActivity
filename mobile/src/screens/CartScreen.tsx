@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
 import {
   ActivityIndicator,
@@ -16,11 +16,13 @@ import {
   CartItem,
   getCart,
   updateCartQuantity,
+  validateCart,
 } from '../services/cartService';
 
 import {
   createOrder,
 } from '../services/orderService';
+import { getSocket } from '../services/socketService';
 
 interface CartScreenProps {
   token?: string | null;
@@ -33,6 +35,9 @@ const CartScreen = ({
 
   const [loading, setLoading] =
     useState(true);
+
+  const [refreshing, setRefreshing] =
+    useState(false);
 
   const [updatingProductId, setUpdatingProductId] =
     useState<string | null>(null);
@@ -48,7 +53,7 @@ const CartScreen = ({
     0
   );
 
-  const loadCart = async (): Promise<void> => {
+  const loadCart = useCallback(async (showLoading = true): Promise<void> => {
     if (!token) {
       setItems([]);
       setLoading(false);
@@ -56,12 +61,14 @@ const CartScreen = ({
     }
 
     try {
-      setLoading(true);
+      if (showLoading) {
+        setLoading(true);
+      }
 
       const cart = await getCart(token);
 
       const validItems = (cart.items || []).filter(
-        (item) => item.productId !== null
+        (item) => item.productId !== null && !item.savedForLater
       );
 
       setItems(validItems);
@@ -78,11 +85,40 @@ const CartScreen = ({
     } finally {
       setLoading(false);
     }
+  }, [token]);
+
+  const handleManualRefresh = async (): Promise<void> => {
+    setRefreshing(true);
+    try {
+      await loadCart(false);
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   useEffect(() => {
     loadCart();
-  }, [token]);
+  }, [loadCart]);
+
+  useEffect(() => {
+    if (!token) {
+      return undefined;
+    }
+
+    const socket = getSocket();
+    if (!socket) {
+      return undefined;
+    }
+
+    const handleCartUpdated = (): void => {
+      void loadCart(false);
+    };
+
+    socket.on('cartUpdated', handleCartUpdated);
+    return () => {
+      socket.off('cartUpdated', handleCartUpdated);
+    };
+  }, [token, loadCart]);
 
   const changeQuantity = async (
     productId: string,
@@ -152,13 +188,33 @@ const CartScreen = ({
       try {
         setPlacingOrder(true);
 
-        const orderItems = items
-          .filter(
-            (item) => item.productId !== null
-          )
-          .map((item) => ({
+        const validation = await validateCart(token);
+        const currentItems = (validation.cart.items || []).filter(
+          (item) => item.productId !== null && !item.savedForLater
+        );
+        setItems(currentItems);
+
+        if (validation.issues.length > 0) {
+          const message = validation.issues.map((issue) => {
+            if (issue.type === 'price') {
+              return `${issue.productName}: price changed from ₹${issue.oldPrice} to ₹${issue.newPrice}. Your cart total has been updated; review it before continuing.`;
+            }
+            if (issue.type === 'stock') {
+              return issue.availableStock && issue.availableStock > 0
+                ? `${issue.productName}: only ${issue.availableStock} available. Reduce the quantity to continue.`
+                : `${issue.productName} is out of stock. Remove it to continue.`;
+            }
+            return `${issue.productName} is no longer available and was removed from your cart.`;
+          }).join('\n\n');
+
+          Alert.alert('Review your cart', message);
+          return;
+        }
+
+        const orderItems = currentItems.map((item) => ({
             productId: item.productId!._id,
             quantity: item.quantity,
+            price: item.productId!.price,
           }));
 
         await createOrder(
@@ -178,10 +234,12 @@ const CartScreen = ({
           error
         );
 
-        Alert.alert(
-          'Error',
-          'Failed to place order.'
-        );
+      Alert.alert(
+        'Checkout could not complete',
+        (error as { response?: { data?: { message?: string } } })
+          ?.response?.data?.message ||
+          (error instanceof Error ? error.message : 'Failed to place order.')
+      );
       } finally {
         setPlacingOrder(false);
       }
@@ -232,6 +290,17 @@ const CartScreen = ({
           Products you add to your cart will
           appear here.
         </Text>
+        <TouchableOpacity
+          style={styles.refreshButton}
+          onPress={handleManualRefresh}
+          disabled={refreshing}
+          accessibilityRole="button"
+          accessibilityLabel="Refresh cart"
+        >
+          <Text style={styles.refreshButtonText}>
+            {refreshing ? 'Refreshing…' : '↻ Refresh Cart'}
+          </Text>
+        </TouchableOpacity>
       </SafeAreaView>
     );
   }
@@ -239,14 +308,25 @@ const CartScreen = ({
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>
-          My Cart
-        </Text>
-
-        <Text style={styles.count}>
-          {items.length} item
-          {items.length !== 1 ? 's' : ''}
-        </Text>
+        <View style={styles.headerRow}>
+          <View>
+            <Text style={styles.title}>My Cart</Text>
+            <Text style={styles.count}>
+              {items.length} item{items.length !== 1 ? 's' : ''}
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={styles.refreshButton}
+            onPress={handleManualRefresh}
+            disabled={refreshing}
+            accessibilityRole="button"
+            accessibilityLabel="Refresh cart"
+          >
+            <Text style={styles.refreshButtonText}>
+              {refreshing ? 'Refreshing…' : '↻ Refresh'}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <FlatList
@@ -416,6 +496,27 @@ const styles = StyleSheet.create({
     paddingTop: 22,
     paddingBottom: 18,
     backgroundColor: '#F8F6F1',
+  },
+
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+
+  refreshButton: {
+    minHeight: 42,
+    justifyContent: 'center',
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    backgroundColor: '#E8F0EA',
+  },
+
+  refreshButtonText: {
+    color: '#28553E',
+    fontSize: 14,
+    fontWeight: '800',
   },
 
   title: {

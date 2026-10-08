@@ -1,6 +1,6 @@
 import { io, Socket } from 'socket.io-client';
 
-const SOCKET_URL = 'http://192.168.1.100:5000';
+const SOCKET_URL = 'https://task1-productactivity.onrender.com';
 
 let socket: Socket | null = null;
 

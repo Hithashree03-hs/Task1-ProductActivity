@@ -385,6 +385,12 @@ const ProductListScreen = ({
 
 </View>
 
+      <View style={{ flexDirection: 'row', paddingHorizontal: 12, paddingBottom: 8 }}>
+        <TouchableOpacity onPress={() => navigation.navigate('Recommendations')} style={{ flex: 1, padding: 13, marginRight: 6, borderRadius: 14, backgroundColor: '#294936' }}><Text style={{ color: 'white', fontWeight: '700', textAlign: 'center' }}>You May Also Like</Text></TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate(token ? 'Orders' : 'Preferences')} style={{ flex: 1, padding: 13, marginHorizontal: 4, borderRadius: 14, backgroundColor: '#E8F0E9' }}><Text style={{ color: '#294936', fontWeight: '700', textAlign: 'center' }}>{token ? 'Order History' : 'Personalization'}</Text></TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('Preferences')} style={{ flex: 1, padding: 13, marginLeft: 6, borderRadius: 14, backgroundColor: '#F0E0CC' }}><Text style={{ color: '#294936', fontWeight: '700', textAlign: 'center' }}>Settings</Text></TouchableOpacity>
+      </View>
+
       {/* Product list */}
 
       <FlatList

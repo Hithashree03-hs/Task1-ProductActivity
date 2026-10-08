@@ -49,3 +49,14 @@ const auth = (
 };
 
 export default auth;
+
+export const optionalAuth = (req: AuthRequest, _res: Response, next: NextFunction): void => {
+  try {
+    const value = req.headers.authorization;
+    if (value?.startsWith('Bearer ')) {
+      const decoded = jwt.verify(value.slice(7), process.env.JWT_SECRET || 'task1_super_secret_change_later') as JwtPayload;
+      req.userId = decoded.userId;
+    }
+  } catch { /* Invalid optional tokens are treated as anonymous. */ }
+  next();
+};

@@ -5,6 +5,10 @@ export interface IUser extends Document {
   name: string;
   email: string;
   password: string;
+  themePreference: 'system' | 'light' | 'dark';
+  favoriteCategories: string[];
+  notificationPreferences: Record<string, boolean>;
+  expoPushTokens: string[];
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
@@ -30,6 +34,14 @@ const userSchema = new Schema<IUser>(
       minlength: 6,
       select: false,
     },
+    themePreference: { type: String, enum: ['system', 'light', 'dark'], default: 'system' },
+    favoriteCategories: { type: [String], default: [] },
+    notificationPreferences: {
+      type: Map,
+      of: Boolean,
+      default: () => ({ order: true, payment: true, shipping: true, wishlist: true, promotions: true, cart: true }),
+    },
+    expoPushTokens: { type: [String], default: [] },
   },
   {
     timestamps: true,

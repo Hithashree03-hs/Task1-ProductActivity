@@ -68,6 +68,8 @@ The Android application has been built and tested successfully.
 
 \- Add products to cart
 
+\- Synchronizes cart changes across signed-in web and mobile devices in real time
+
 \- Update quantities
 
 \- Remove products
@@ -75,6 +77,8 @@ The Android application has been built and tested successfully.
 \- View cart total
 
 \- Place orders
+
+\- Checks stock and price changes before checkout, notifies the user, and refreshes the cart total
 
 
 
