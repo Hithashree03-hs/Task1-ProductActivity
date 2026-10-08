@@ -1,14 +1,31 @@
 {
-  "name": "mobile",
-  "displayName": "mobile",
   "expo": {
     "name": "ShopEasy",
     "slug": "shopeasy-product-activity",
     "version": "1.0.0",
     "scheme": "shopeasy",
-    "ios": { "bundleIdentifier": "com.mobile", "infoPlist": { "UIBackgroundModes": ["remote-notification"] } },
-    "android": { "package": "com.mobile", "permissions": ["android.permission.POST_NOTIFICATIONS"] },
-    "plugins": ["expo-notifications"],
-    "extra": { "eas": {} }
+    "ios": {
+      "bundleIdentifier": "com.mobile",
+      "infoPlist": {
+        "UIBackgroundModes": [
+          "remote-notification"
+        ]
+      }
+    },
+    "android": {
+      "package": "com.mobile",
+      "permissions": [
+        "android.permission.POST_NOTIFICATIONS"
+      ]
+    },
+    "plugins": [
+      "expo-notifications"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "6808d124-4e89-4c16-b879-bd59cb65e472"
+      }
+    },
+    "owner": "hithashreehs3"
   }
 }
