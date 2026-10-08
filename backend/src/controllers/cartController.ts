@@ -5,9 +5,13 @@ import { AuthRequest } from '../middleware/auth';
 import Cart from '../models/Cart';
 import Product from '../models/Product';
 import { getIO } from '../sockets/server';
+import { recordProductInteraction } from '../services/recentlyViewedService';
+import { ActivityType } from '../models/ProductActivity';
+import NotificationLog from '../models/NotificationLog';
 
 const notifyCartUpdated = (userId: mongoose.Types.ObjectId): void => {
   getIO().to(`user:${userId.toString()}`).emit('cartUpdated');
+  void NotificationLog.updateMany({ userId, category: 'cart', status: 'SCHEDULED' }, { $set: { status: 'CANCELLED' } }).catch((error) => console.error('Could not cancel stale cart reminders:', error));
 };
 
 interface CartItemInput {
@@ -289,6 +293,7 @@ export const addToCart = async (
     }
 
     notifyCartUpdated(userId);
+    await recordProductInteraction(userId.toString(), productId, ActivityType.CART);
     const cart = await getPopulatedCart(userId);
 
     res.status(200).json({

@@ -16,14 +16,16 @@ import orderRoutes from './routes/orderRoutes';
 import recommendationRoutes from './routes/recommendationRoutes';
 import preferencesRoutes from './routes/preferencesRoutes';
 import notificationRoutes from './routes/notificationRoutes';
-import NotificationLog from './models/NotificationLog';
-import { sendNotification } from './controllers/notificationController';
+import { dispatchScheduledNotifications, processPushReceipts, scheduleAbandonedCartReminders } from './controllers/notificationController';
+import { internalEventWebhook, paymentWebhook } from './controllers/webhookController';
 
 dotenv.config();
 
 const app = express();
 
 app.use(cors());
+app.post('/api/webhooks/payment', express.raw({ type: 'application/json', limit: '256kb' }), paymentWebhook);
+app.post('/api/internal/events', express.raw({ type: 'application/json', limit: '256kb' }), internalEventWebhook);
 app.use(express.json());
 
 // Health check
@@ -61,17 +63,9 @@ const startServer = async (): Promise<void> => {
   try {
     await connectDB();
 
-    // Dispatch due scheduled reminders and retain each attempt in the notification log.
-    setInterval(async () => {
-      try {
-        const due = await NotificationLog.find({ status: 'SCHEDULED', scheduledAt: { $lte: new Date() } }).sort({ scheduledAt: 1 }).limit(50);
-        for (const item of due) {
-          await sendNotification(item.userId.toString(), item.category, item.title, item.body);
-          item.status = 'SENT';
-          await item.save();
-        }
-      } catch (error) { console.error('Scheduled notification dispatch failed:', error); }
-    }, 60_000);
+    setInterval(() => { void dispatchScheduledNotifications().catch((error) => console.error('Scheduled notification dispatch failed:', error)); }, 60_000);
+    setInterval(() => { void scheduleAbandonedCartReminders().catch((error) => console.error('Cart reminder scheduling failed:', error)); }, 5 * 60_000);
+    setInterval(() => { void processPushReceipts().catch((error) => console.error('Expo receipt processing failed:', error)); }, 15 * 60_000);
 
     const httpServer = createServer(app);
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 import {
   ActivityIndicator,
@@ -24,6 +24,8 @@ import {
 import {
   RootStackParamList,
 } from '../navigation/AppNavigator';
+import { useTheme } from '../theme/ThemeProvider';
+import { ThemeColors } from '../theme/theme';
 
 interface ProductListScreenProps {
   navigation: NativeStackNavigationProp<
@@ -44,6 +46,8 @@ const ProductListScreen = ({
   onLoginPress,
   onLogout,
 }: ProductListScreenProps): React.JSX.Element => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [products, setProducts] =
     useState<Product[]>([]);
 
@@ -386,9 +390,9 @@ const ProductListScreen = ({
 </View>
 
       <View style={{ flexDirection: 'row', paddingHorizontal: 12, paddingBottom: 8 }}>
-        <TouchableOpacity onPress={() => navigation.navigate('Recommendations')} style={{ flex: 1, padding: 13, marginRight: 6, borderRadius: 14, backgroundColor: '#294936' }}><Text style={{ color: 'white', fontWeight: '700', textAlign: 'center' }}>You May Also Like</Text></TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate(token ? 'Orders' : 'Preferences')} style={{ flex: 1, padding: 13, marginHorizontal: 4, borderRadius: 14, backgroundColor: '#E8F0E9' }}><Text style={{ color: '#294936', fontWeight: '700', textAlign: 'center' }}>{token ? 'Order History' : 'Personalization'}</Text></TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('Preferences')} style={{ flex: 1, padding: 13, marginLeft: 6, borderRadius: 14, backgroundColor: '#F0E0CC' }}><Text style={{ color: '#294936', fontWeight: '700', textAlign: 'center' }}>Settings</Text></TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('Recommendations')} style={[styles.topAction, { backgroundColor: colors.primary }]}><Text style={[styles.topActionText, { color: colors.whiteText }]}>You May Also Like</Text></TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate(token ? 'Orders' : 'Preferences')} style={[styles.topAction, { backgroundColor: colors.surfaceAlt }]}><Text style={[styles.topActionText, { color: colors.text }]}>{token ? 'Order History' : 'Personalization'}</Text></TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('Preferences')} style={[styles.topAction, { backgroundColor: colors.surfaceWarm }]}><Text style={[styles.topActionText, { color: colors.text }]}>Settings</Text></TouchableOpacity>
       </View>
 
       {/* Product list */}
@@ -462,23 +466,12 @@ const ProductListScreen = ({
   );
 };
 
-const COLORS = {
-  background: '#F8F6F1',
-  primary: '#6B8F71',
-  primaryDark: '#294936',
-  secondary: '#C98F8F',
-  softGreen: '#E8F0E9',
-  card: '#FFFFFF',
-  text: '#243027',
-  secondaryText: '#718078',
-  border: '#E3E8E3',
-  muted: '#A2ADA5',
-};
-
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => {
+const COLORS = { background: colors.background, primary: colors.primary, primaryDark: colors.primaryDark, secondary: colors.accent, softGreen: colors.surfaceAlt, card: colors.surface, text: colors.text, secondaryText: colors.muted, border: colors.border, muted: colors.muted, orange: colors.surfaceWarm, blue: colors.surfaceCool, rose: colors.surfaceRose, mint: colors.surfaceMint, whiteText: colors.whiteText, info: colors.info, danger: colors.danger, shadow: colors.shadow };
+return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f7f7f7',
+    backgroundColor: COLORS.background,
   },
 
   center: {
@@ -502,7 +495,7 @@ const styles = StyleSheet.create({
   width: 180,
   height: 180,
   borderRadius: 90,
-  backgroundColor: '#E2EEE4',
+  backgroundColor: COLORS.softGreen,
   top: -95,
   right: -45,
   opacity: 0.8,
@@ -540,7 +533,7 @@ subtitle: {
   paddingHorizontal: 20,
   borderRadius: 24,
   backgroundColor: COLORS.primary,
-  shadowColor: '#294936',
+  shadowColor: COLORS.shadow,
   shadowOffset: {
     width: 0,
     height: 3,
@@ -551,7 +544,7 @@ subtitle: {
 },
 
 loginButtonText: {
-  color: '#FFFFFF',
+  color: COLORS.whiteText,
   fontSize: 14,
   fontWeight: '700',
 },
@@ -561,7 +554,7 @@ logoutButton: {
   paddingHorizontal: 20,
   borderRadius: 24,
   backgroundColor: COLORS.primaryDark,
-  shadowColor: '#294936',
+  shadowColor: COLORS.shadow,
   shadowOffset: {
     width: 0,
     height: 3,
@@ -572,7 +565,7 @@ logoutButton: {
 },
 
 logoutButtonText: {
-  color: '#FFFFFF',
+  color: COLORS.whiteText,
   fontSize: 14,
   fontWeight: '700',
 },
@@ -583,32 +576,32 @@ quickAccessHeader: {
   flexDirection: 'row',
   alignItems: 'center',
   justifyContent: 'space-between',
-  backgroundColor: '#F8F6F1',
+  backgroundColor: COLORS.background,
 },
 
 quickAccessTitle: {
   fontSize: 19,
   fontWeight: '900',
-  color: '#294936',
+  color: COLORS.primaryDark,
 },
 
 quickAccessSubtitle: {
   marginTop: 3,
   fontSize: 12,
-  color: '#718078',
+  color: COLORS.secondaryText,
 },
 
 quickAccessBadge: {
   paddingHorizontal: 10,
   paddingVertical: 6,
   borderRadius: 12,
-  backgroundColor: '#E8F0E9',
+  backgroundColor: COLORS.softGreen,
 },
 
 quickAccessBadgeText: {
   fontSize: 11,
   fontWeight: '800',
-  color: '#294936',
+  color: COLORS.primaryDark,
 },
  navigationContainer: {
   paddingHorizontal: 16,
@@ -617,7 +610,7 @@ quickAccessBadgeText: {
   flexDirection: 'row',
   flexWrap: 'wrap',
   justifyContent: 'space-between',
-  backgroundColor: '#F8F6F1',
+  backgroundColor: COLORS.background,
 },
 
 navigationButton: {
@@ -627,9 +620,9 @@ navigationButton: {
   padding: 16,
   marginBottom: 14,
   borderWidth: 1,
-  borderColor: '#E3E8E3',
+  borderColor: COLORS.border,
   justifyContent: 'space-between',
-  shadowColor: '#294936',
+  shadowColor: COLORS.shadow,
   shadowOffset: {
     width: 0,
     height: 5,
@@ -640,19 +633,19 @@ navigationButton: {
 },
 
 recentCard: {
-  backgroundColor: '#EEF5F0',
+  backgroundColor: COLORS.mint,
 },
 
 continueCard: {
-  backgroundColor: '#F7EFE6',
+  backgroundColor: COLORS.orange,
 },
 
 cartCard: {
-  backgroundColor: '#EDF3F7',
+  backgroundColor: COLORS.blue,
 },
 
 wishlistCard: {
-  backgroundColor: '#F8ECEC',
+  backgroundColor: COLORS.rose,
 },
 
 navigationIconBubble: {
@@ -664,19 +657,19 @@ navigationIconBubble: {
 },
 
 recentIconBubble: {
-  backgroundColor: '#DDEBE0',
+  backgroundColor: COLORS.softGreen,
 },
 
 continueIconBubble: {
-  backgroundColor: '#F0E0CC',
+  backgroundColor: COLORS.orange,
 },
 
 cartIconBubble: {
-  backgroundColor: '#DDEAF2',
+  backgroundColor: COLORS.blue,
 },
 
 wishlistIconBubble: {
-  backgroundColor: '#F3DADA',
+  backgroundColor: COLORS.rose,
 },
 
 navigationIcon: {
@@ -691,14 +684,14 @@ navigationContent: {
 navigationTitle: {
   fontSize: 16,
   fontWeight: '800',
-  color: '#243027',
+  color: COLORS.text,
 },
 
 navigationSubtitle: {
   marginTop: 5,
   fontSize: 12,
   lineHeight: 17,
-  color: '#718078',
+  color: COLORS.secondaryText,
 },
 
 navigationArrow: {
@@ -710,19 +703,19 @@ navigationArrow: {
 },
 
 recentArrow: {
-  color: '#294936',
+  color: COLORS.primaryDark,
 },
 
 continueArrow: {
-  color: '#8B5E34',
+  color: COLORS.secondary,
 },
 
 cartArrow: {
-  color: '#496A7A',
+  color: COLORS.info,
 },
 
 wishlistArrow: {
-  color: '#A34B52',
+  color: COLORS.danger,
 },
 sectionHeader: {
   marginTop: 8,
@@ -733,8 +726,8 @@ sectionHeader: {
   justifyContent: 'space-between',
   alignItems: 'flex-end',
   borderTopWidth: 1,
-  borderTopColor: '#E1E5DF',
-  backgroundColor: '#F8F6F1',
+  borderTopColor: COLORS.border,
+  backgroundColor: COLORS.background,
 },
 
  sectionTitle: {
@@ -761,10 +754,10 @@ productCard: {
   margin: 6,
   padding: 10,
   borderRadius: 22,
-  backgroundColor: '#FFFFFF',
+  backgroundColor: COLORS.card,
   borderWidth: 1,
-  borderColor: '#E3E8E3',
-  shadowColor: '#294936',
+  borderColor: COLORS.border,
+  shadowColor: COLORS.shadow,
   shadowOffset: {
     width: 0,
     height: 4,
@@ -789,7 +782,7 @@ productRow: {
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#eeeeee',
+    backgroundColor: COLORS.softGreen,
   },
 
   productEmoji: {
@@ -828,6 +821,9 @@ price: {
   fontWeight: '600',
   color: COLORS.primary,
 },
+  topAction: { flex: 1, padding: 10, marginHorizontal: 4, borderRadius: 14, justifyContent: 'center' },
+  topActionText: { fontWeight: '700', textAlign: 'center', fontSize: 12 },
 });
+};
 
 export default ProductListScreen;

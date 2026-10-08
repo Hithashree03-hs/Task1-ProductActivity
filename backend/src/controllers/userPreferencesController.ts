@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import User from '../models/User';
+import { getIO } from '../sockets/server';
 
 export const getPreferences = async (req: AuthRequest, res: Response): Promise<void> => {
   const user = await User.findById(req.userId).select('themePreference notificationPreferences favoriteCategories').lean();
@@ -19,5 +20,6 @@ export const updatePreferences = async (req: AuthRequest, res: Response): Promis
   }
   if (Array.isArray(favoriteCategories)) update.favoriteCategories = favoriteCategories.filter((v: unknown) => typeof v === 'string').slice(0, 30);
   const user = await User.findByIdAndUpdate(req.userId, { $set: update }, { new: true, runValidators: true }).select('themePreference notificationPreferences favoriteCategories').lean();
+  if (Array.isArray(favoriteCategories)) getIO().to(`user:${req.userId}`).emit('recommendationsUpdated');
   res.json({ preferences: user });
 };

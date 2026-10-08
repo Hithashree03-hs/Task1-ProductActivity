@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 import {
   ActivityIndicator,
@@ -41,6 +41,8 @@ import {
   addToWishlist,
   removeFromWishlist,
 } from '../services/wishlistService';
+import { useTheme } from '../theme/ThemeProvider';
+import { ThemeColors } from '../theme/theme';
 
 type ProductDetailScreenProps =
   NativeStackScreenProps<
@@ -51,6 +53,8 @@ type ProductDetailScreenProps =
 const ProductDetailScreen = ({
   route,
 }: ProductDetailScreenProps): React.JSX.Element => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const {
     productId,
     token,
@@ -312,10 +316,10 @@ const ProductDetailScreen = ({
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F6F1',
+    backgroundColor: c.background,
   },
 
   scrollContent: {
@@ -327,25 +331,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 25,
-    backgroundColor: '#F8F6F1',
+    backgroundColor: c.background,
   },
 
   loadingText: {
     marginTop: 10,
     fontSize: 15,
-    color: '#718078',
+    color: c.muted,
   },
 
   errorText: {
     fontSize: 16,
-    color: '#294936',
+    color: c.primaryDark,
     fontWeight: '700',
   },
 
   productImage: {
     width: '100%',
     height: 340,
-    backgroundColor: '#E8F0E9',
+    backgroundColor: c.surfaceAlt,
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
   },
@@ -359,7 +363,7 @@ const styles = StyleSheet.create({
     fontSize: 30,
     lineHeight: 36,
     fontWeight: '900',
-    color: '#243027',
+    color: c.text,
   },
 
   category: {
@@ -369,8 +373,8 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     borderRadius: 14,
     overflow: 'hidden',
-    backgroundColor: '#E8F0E9',
-    color: '#294936',
+    backgroundColor: c.surfaceAlt,
+    color: c.primaryDark,
     fontSize: 12,
     fontWeight: '800',
   },
@@ -379,21 +383,21 @@ const styles = StyleSheet.create({
     marginTop: 20,
     fontSize: 15,
     lineHeight: 24,
-    color: '#718078',
+    color: c.muted,
   },
 
   price: {
     marginTop: 20,
     fontSize: 30,
     fontWeight: '900',
-    color: '#294936',
+    color: c.primaryDark,
   },
 
   stock: {
     marginTop: 8,
     fontSize: 13,
     fontWeight: '700',
-    color: '#6B8F71',
+    color: c.primary,
   },
 
   actionContainer: {
@@ -403,25 +407,25 @@ const styles = StyleSheet.create({
   wishlistButton: {
     minHeight: 54,
     borderWidth: 1,
-    borderColor: '#E3E8E3',
+    borderColor: c.border,
     borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
     marginBottom: 12,
-    backgroundColor: '#F3E4E2',
+    backgroundColor: c.surfaceRose,
   },
 
   wishlistIcon: {
     fontSize: 24,
     marginRight: 9,
-    color: '#C95C61',
+    color: c.danger,
   },
 
   wishlistText: {
     fontSize: 15,
     fontWeight: '800',
-    color: '#294936',
+    color: c.primaryDark,
   },
 
   cartButton: {
@@ -430,7 +434,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
-    backgroundColor: '#294936',
+    backgroundColor: c.primaryDark,
   },
 
   cartIcon: {
@@ -439,7 +443,7 @@ const styles = StyleSheet.create({
   },
 
   cartText: {
-    color: '#FFFFFF',
+    color: c.whiteText,
     fontSize: 16,
     fontWeight: '800',
   },

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 
 import {
   ActivityIndicator,
@@ -24,6 +24,7 @@ import {
 import {
   connectSocket,
 } from '../services/socketService';
+import { useTheme } from '../theme/ThemeProvider';
 
 interface LoginScreenProps {
   onLoginSuccess: (token: string) => void;
@@ -32,6 +33,8 @@ interface LoginScreenProps {
 const LoginScreen = ({
   onLoginSuccess,
 }: LoginScreenProps): React.JSX.Element => {
+  const { colors, spacing, typography } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, spacing, typography), [colors, spacing, typography]);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -148,7 +151,7 @@ const LoginScreen = ({
           disabled={loading}
         >
           {loading ? (
-            <ActivityIndicator color="#ffffff" />
+            <ActivityIndicator color={colors.whiteText} />
           ) : (
             <Text style={styles.loginButtonText}>
               Login
@@ -160,33 +163,39 @@ const LoginScreen = ({
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ReturnType<typeof useTheme>['colors'], s: ReturnType<typeof useTheme>['spacing'], t: ReturnType<typeof useTheme>['typography']) => StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: c.background,
   },
 
   content: {
     flex: 1,
     justifyContent: 'center',
-    padding: 24,
+    padding: s.lg,
   },
 
   title: {
-    fontSize: 26,
-    fontWeight: 'bold',
+    fontSize: t.title,
+    fontWeight: t.weight.bold,
+    color: c.text,
     textAlign: 'center',
   },
 
   subtitle: {
     marginTop: 8,
     marginBottom: 30,
-    fontSize: 20,
+    fontSize: t.heading,
+    color: c.muted,
     textAlign: 'center',
   },
 
   input: {
     borderWidth: 1,
+    borderColor: c.border,
     borderRadius: 8,
+    backgroundColor: c.surface,
+    color: c.text,
     paddingHorizontal: 14,
     paddingVertical: 12,
     marginBottom: 14,
@@ -203,11 +212,11 @@ const styles = StyleSheet.create({
     padding: 14,
     borderRadius: 8,
     alignItems: 'center',
-    backgroundColor: '#222222',
+    backgroundColor: c.primary,
   },
 
   loginButtonText: {
-    color: '#ffffff',
+    color: c.whiteText,
     fontSize: 16,
     fontWeight: 'bold',
   },

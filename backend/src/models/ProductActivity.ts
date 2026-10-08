@@ -5,6 +5,7 @@ export enum ActivityType {
   CART = 'CART',
   WISHLIST = 'WISHLIST',
   PURCHASE = 'PURCHASE',
+  RECOMMENDATION_VIEW = 'RECOMMENDATION_VIEW',
 }
 
 export interface IProductActivity extends Document {

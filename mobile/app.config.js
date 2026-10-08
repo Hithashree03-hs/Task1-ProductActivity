@@ -1,0 +1,9 @@
+const projectId = process.env.EXPO_PUBLIC_EAS_PROJECT_ID;
+
+module.exports = ({ config }) => ({
+  ...config,
+  extra: {
+    ...config.extra,
+    eas: projectId ? { ...config.extra?.eas, projectId } : config.extra?.eas,
+  },
+});

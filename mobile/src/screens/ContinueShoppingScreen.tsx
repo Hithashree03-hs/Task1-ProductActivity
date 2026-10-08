@@ -1,5 +1,6 @@
 import React, {
   useEffect,
+  useMemo,
   useState,
 } from 'react';
 
@@ -22,26 +23,18 @@ import {
 
 import { addToCart } from '../services/cartService';
 import { addToWishlist } from '../services/wishlistService';
+import { useTheme } from '../theme/ThemeProvider';
 
 interface ContinueShoppingScreenProps {
   token?: string | null;
 }
 
-const COLORS = {
-  background: '#F8F6F1',
-  primary: '#6B8F71',
-  primaryDark: '#294936',
-  softGreen: '#E8F0E9',
-  softRose: '#F3E4E2',
-  card: '#FFFFFF',
-  text: '#243027',
-  secondaryText: '#718078',
-  border: '#E3E8E3',
-};
-
 const ContinueShoppingScreen = ({
   token,
 }: ContinueShoppingScreenProps): React.JSX.Element => {
+  const { colors } = useTheme();
+  const COLORS = { background: colors.background, primary: colors.primary, primaryDark: colors.primaryDark, softGreen: colors.surfaceAlt, softRose: colors.surfaceRose, card: colors.surface, text: colors.text, secondaryText: colors.muted, border: colors.border, shadow: colors.shadow, whiteText: colors.whiteText };
+  const styles = useMemo(() => makeStyles(COLORS), [colors]);
   const [products, setProducts] = useState<
     ContinueShoppingItem[]
   >([]);
@@ -288,7 +281,7 @@ const ContinueShoppingScreen = ({
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (COLORS: Record<string, string>) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
@@ -350,7 +343,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.card,
     borderWidth: 1,
     borderColor: COLORS.border,
-    shadowColor: '#294936',
+    shadowColor: COLORS.shadow,
     shadowOffset: {
       width: 0,
       height: 4,
@@ -382,7 +375,7 @@ const styles = StyleSheet.create({
   },
 
   continueBadgeText: {
-    color: '#FFFFFF',
+    color: COLORS.whiteText,
     fontSize: 10,
     fontWeight: '700',
   },
@@ -422,7 +415,7 @@ const styles = StyleSheet.create({
   },
 
   cartButtonText: {
-    color: '#FFFFFF',
+    color: COLORS.whiteText,
     fontSize: 12,
     fontWeight: '800',
   },

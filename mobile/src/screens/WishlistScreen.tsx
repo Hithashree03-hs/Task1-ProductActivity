@@ -1,5 +1,6 @@
 import React, {
   useEffect,
+  useMemo,
   useState,
 } from 'react';
 
@@ -27,6 +28,7 @@ import {
 import {
   RootStackParamList,
 } from '../navigation/AppNavigator';
+import { useTheme } from '../theme/ThemeProvider';
 
 interface WishlistProduct {
   _id: string;
@@ -45,22 +47,13 @@ interface WishlistScreenProps {
   >;
 }
 
-const COLORS = {
-  background: '#F8F6F1',
-  primary: '#6B8F71',
-  primaryDark: '#294936',
-  softGreen: '#E8F0E9',
-  softRose: '#F3E4E2',
-  card: '#FFFFFF',
-  text: '#243027',
-  secondaryText: '#718078',
-  border: '#E3E8E3',
-};
-
 const WishlistScreen = ({
   token,
   navigation,
 }: WishlistScreenProps): React.JSX.Element => {
+  const { colors } = useTheme();
+  const COLORS = { background: colors.background, primary: colors.primary, primaryDark: colors.primaryDark, softGreen: colors.surfaceAlt, softRose: colors.surfaceRose, card: colors.surface, text: colors.text, secondaryText: colors.muted, border: colors.border, shadow: colors.shadow, whiteText: colors.whiteText, danger: colors.danger };
+  const styles = useMemo(() => makeStyles(COLORS), [colors]);
   const [products, setProducts] = useState<
     WishlistProduct[]
   >([]);
@@ -312,7 +305,7 @@ const WishlistScreen = ({
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (COLORS: Record<string, string>) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
@@ -372,7 +365,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.card,
     borderWidth: 1,
     borderColor: COLORS.border,
-    shadowColor: '#294936',
+    shadowColor: COLORS.shadow,
     shadowOffset: {
       width: 0,
       height: 4,
@@ -402,7 +395,7 @@ const styles = StyleSheet.create({
     borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.card,
   },
 
   heartDisabled: {
@@ -411,7 +404,7 @@ const styles = StyleSheet.create({
 
   heartText: {
     fontSize: 18,
-    color: '#C95C61',
+    color: COLORS.danger,
   },
 
   productInfo: {
@@ -473,7 +466,7 @@ const styles = StyleSheet.create({
 
   emptyIcon: {
     fontSize: 40,
-    color: '#C95C61',
+    color: COLORS.danger,
   },
 
   emptyTitle: {

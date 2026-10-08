@@ -3,6 +3,8 @@ import { AuthRequest } from '../middleware/auth';
 import Wishlist from '../models/Wishlist';
 import Product from '../models/Product';
 import mongoose from 'mongoose';
+import { recordProductInteraction, removeProductInteraction } from '../services/recentlyViewedService';
+import { ActivityType } from '../models/ProductActivity';
 
 export const addToWishlist = async (
   req: AuthRequest,
@@ -54,8 +56,10 @@ export const addToWishlist = async (
       if (!alreadyExists) {
   wishlist.products.unshift(productObjectId);
   await wishlist.save();
-}
+      }
     }
+
+    await recordProductInteraction(req.userId, productId, ActivityType.WISHLIST);
 
     res.status(200).json({
       message: 'Product added to wishlist',
@@ -143,6 +147,8 @@ export const removeFromWishlist = async (
     );
 
     await wishlist.save();
+
+    await removeProductInteraction(req.userId, productId, ActivityType.WISHLIST);
 
     res.status(200).json({
       message: 'Product removed from wishlist',

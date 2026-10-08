@@ -22,6 +22,12 @@ mobile/ios/build/
 # Metro / React Native temporary files
 mobile/.metro/
 mobile/.bundle/
+mobile/.expo-export-temp/
+
+# Workspace-local tool caches
+.android-user/
+.gradle-task/
+.local-appdata/
 
 # Logs
 *.log

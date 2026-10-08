@@ -13,6 +13,10 @@ export interface ICartItem {
 export interface ICart extends Document {
   userId: mongoose.Types.ObjectId;
   items: ICartItem[];
+  createdAt: Date;
+  updatedAt: Date;
+  abandonedReminderFor?: Date;
+  abandonedReminderScheduledAt?: Date;
 }
 
 const cartItemSchema = new Schema<ICartItem>(
@@ -69,6 +73,8 @@ const cartSchema = new Schema<ICart>(
       type: [cartItemSchema],
       default: [],
     },
+    abandonedReminderFor: { type: Date },
+    abandonedReminderScheduledAt: { type: Date },
   },
   {
     timestamps: true,

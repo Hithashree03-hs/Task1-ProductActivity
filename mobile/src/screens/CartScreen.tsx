@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import {
   ActivityIndicator,
@@ -23,6 +23,8 @@ import {
   createOrder,
 } from '../services/orderService';
 import { getSocket } from '../services/socketService';
+import { useTheme } from '../theme/ThemeProvider';
+import { ThemeColors } from '../theme/theme';
 
 interface CartScreenProps {
   token?: string | null;
@@ -31,6 +33,8 @@ interface CartScreenProps {
 const CartScreen = ({
   token,
 }: CartScreenProps): React.JSX.Element => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const [items, setItems] = useState<CartItem[]>([]);
 
   const [loading, setLoading] =
@@ -485,17 +489,17 @@ const CartScreen = ({
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F6F1',
+    backgroundColor: c.background,
   },
 
   header: {
     paddingHorizontal: 20,
     paddingTop: 22,
     paddingBottom: 18,
-    backgroundColor: '#F8F6F1',
+    backgroundColor: c.background,
   },
 
   headerRow: {
@@ -510,11 +514,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 14,
     borderRadius: 12,
-    backgroundColor: '#E8F0EA',
+    backgroundColor: c.surfaceAlt,
   },
 
   refreshButtonText: {
-    color: '#28553E',
+    color: c.primaryDark,
     fontSize: 14,
     fontWeight: '800',
   },
@@ -522,13 +526,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '800',
-    color: '#294936',
+    color: c.primaryDark,
   },
 
   count: {
     marginTop: 5,
     fontSize: 14,
-    color: '#718078',
+    color: c.muted,
   },
 
   list: {
@@ -538,13 +542,13 @@ const styles = StyleSheet.create({
 
   card: {
     flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     borderRadius: 20,
     padding: 12,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: '#E3E8E3',
-    shadowColor: '#294936',
+    borderColor: c.border,
+    shadowColor: c.shadow,
     shadowOffset: {
       width: 0,
       height: 4,
@@ -558,7 +562,7 @@ const styles = StyleSheet.create({
     width: 105,
     height: 105,
     borderRadius: 16,
-    backgroundColor: '#E8F0E9',
+    backgroundColor: c.surfaceAlt,
   },
 
   productInfo: {
@@ -571,20 +575,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 21,
     fontWeight: '800',
-    color: '#243027',
+    color: c.text,
   },
 
   category: {
     marginTop: 5,
     fontSize: 12,
-    color: '#718078',
+    color: c.muted,
   },
 
   price: {
     marginTop: 7,
     fontSize: 18,
     fontWeight: '800',
-    color: '#294936',
+    color: c.primaryDark,
   },
 
   quantityRow: {
@@ -597,7 +601,7 @@ const styles = StyleSheet.create({
   quantityLabel: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#718078',
+    color: c.muted,
   },
 
   quantityControls: {
@@ -611,13 +615,13 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#E8F0E9',
+    backgroundColor: c.surfaceAlt,
   },
 
   quantityButtonText: {
     fontSize: 21,
     fontWeight: '700',
-    color: '#294936',
+    color: c.primaryDark,
   },
 
   quantityValue: {
@@ -630,16 +634,16 @@ const styles = StyleSheet.create({
   quantityValueText: {
     fontSize: 16,
     fontWeight: '800',
-    color: '#243027',
+    color: c.text,
   },
 
   checkoutContainer: {
     paddingHorizontal: 18,
     paddingTop: 16,
     paddingBottom: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     borderTopWidth: 1,
-    borderTopColor: '#E3E8E3',
+    borderTopColor: c.border,
   },
 
   totalRow: {
@@ -652,13 +656,13 @@ const styles = StyleSheet.create({
   totalLabel: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#718078',
+    color: c.muted,
   },
 
   totalAmount: {
     fontSize: 24,
     fontWeight: '900',
-    color: '#294936',
+    color: c.primaryDark,
   },
 
   placeOrderButton: {
@@ -666,11 +670,11 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#294936',
+    backgroundColor: c.primaryDark,
   },
 
   placeOrderText: {
-    color: '#FFFFFF',
+    color: c.whiteText,
     fontSize: 17,
     fontWeight: '800',
   },
@@ -684,13 +688,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 30,
-    backgroundColor: '#F8F6F1',
+    backgroundColor: c.background,
   },
 
   loadingText: {
     marginTop: 10,
     fontSize: 15,
-    color: '#718078',
+    color: c.muted,
   },
 
   emptyIcon: {
@@ -701,14 +705,14 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 23,
     fontWeight: '800',
-    color: '#294936',
+    color: c.primaryDark,
     marginBottom: 8,
   },
 
   emptyText: {
     fontSize: 14,
     lineHeight: 21,
-    color: '#718078',
+    color: c.muted,
     textAlign: 'center',
   },
 });

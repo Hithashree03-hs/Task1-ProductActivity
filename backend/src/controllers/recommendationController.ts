@@ -19,7 +19,7 @@ export const getRecommendations = async (req: Request, res: Response): Promise<v
     }
     const uid = new mongoose.Types.ObjectId(userId);
     const [activities, wishlist, orders, user] = await Promise.all([
-      ProductActivity.find({ userId: uid }).sort({ viewedAt: -1 }).limit(50).select('productId activityType').lean(),
+      ProductActivity.find({ userId: uid, activityType: { $in: [ActivityType.RECOMMENDATION_VIEW, ActivityType.VIEW, ActivityType.CART, ActivityType.WISHLIST] } }).sort({ viewedAt: -1 }).limit(50).select('productId activityType').lean(),
       Wishlist.findOne({ userId: uid }).select('products').lean(),
       Order.find({ userId: uid, status: { $ne: 'CANCELLED' }, createdAt: { $gte: new Date(Date.now() - 90 * 86400000) } }).select('items.productId').lean(),
       User.findById(uid).select('favoriteCategories').lean(),
@@ -27,7 +27,13 @@ export const getRecommendations = async (req: Request, res: Response): Promise<v
     const scores = new Map<string, number>();
     const categories = new Set<string>(user?.favoriteCategories || []);
     const add = (id: unknown, score: number) => { if (id) scores.set(String(id), (scores.get(String(id)) || 0) + score); };
-    activities.forEach((a) => add(a.productId, a.activityType === ActivityType.WISHLIST ? 8 : a.activityType === ActivityType.CART ? 6 : 3));
+    const engagement = new Map<string, number>();
+    activities.forEach((activity) => {
+      const id = String(activity.productId);
+      const weight = activity.activityType === ActivityType.WISHLIST ? 8 : activity.activityType === ActivityType.CART ? 6 : 3;
+      engagement.set(id, Math.max(engagement.get(id) || 0, weight));
+    });
+    engagement.forEach((weight, id) => add(id, weight));
     (wishlist?.products || []).forEach((id: any) => add(id, 8));
     orders.forEach((o: any) => o.items.forEach((i: any) => add(i.productId, 5)));
     const purchasedIds = orders.flatMap((o: any) => o.items.map((i: any) => String(i.productId)));

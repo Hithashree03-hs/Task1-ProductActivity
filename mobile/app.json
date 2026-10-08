@@ -1,4 +1,14 @@
 {
   "name": "mobile",
-  "displayName": "mobile"
+  "displayName": "mobile",
+  "expo": {
+    "name": "ShopEasy",
+    "slug": "shopeasy-product-activity",
+    "version": "1.0.0",
+    "scheme": "shopeasy",
+    "ios": { "bundleIdentifier": "com.mobile", "infoPlist": { "UIBackgroundModes": ["remote-notification"] } },
+    "android": { "package": "com.mobile", "permissions": ["android.permission.POST_NOTIFICATIONS"] },
+    "plugins": ["expo-notifications"],
+    "extra": { "eas": {} }
+  }
 }

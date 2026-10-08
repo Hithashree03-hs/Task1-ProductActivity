@@ -12,7 +12,15 @@ export interface IOrder extends Document {
   userId: mongoose.Types.ObjectId;
   items: IOrderItem[];
   totalAmount: number;
-  status: 'PENDING' | 'COMPLETED' | 'CANCELLED';
+  status: 'PENDING' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'COMPLETED' | 'CANCELLED' | 'RETURN_REQUESTED' | 'RETURNED';
+  paymentMethod: string;
+  paymentStatus: 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED';
+  invoiceNumber: string;
+  deliveryTimeline: Array<{ status: string; note: string; at: Date }>;
+  cancellationReason?: string;
+  returnReason?: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const orderItemSchema = new Schema<IOrderItem>(
@@ -72,9 +80,15 @@ const orderSchema = new Schema<IOrder>(
 
     status: {
       type: String,
-      enum: ['PENDING', 'COMPLETED', 'CANCELLED'],
-      default: 'PENDING',
+      enum: ['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'COMPLETED', 'CANCELLED', 'RETURN_REQUESTED', 'RETURNED'],
+      default: 'PROCESSING',
     },
+    paymentMethod: { type: String, enum: ['CASH_ON_DELIVERY', 'CARD', 'UPI', 'WALLET'], default: 'CASH_ON_DELIVERY' },
+    paymentStatus: { type: String, enum: ['PENDING', 'PAID', 'FAILED', 'REFUNDED'], default: 'PENDING' },
+    invoiceNumber: { type: String, unique: true, sparse: true },
+    deliveryTimeline: [{ status: { type: String, required: true }, note: { type: String, default: '' }, at: { type: Date, default: Date.now } }],
+    cancellationReason: { type: String, trim: true, maxlength: 500 },
+    returnReason: { type: String, trim: true, maxlength: 500 },
   },
   {
     timestamps: true,
@@ -85,6 +99,8 @@ orderSchema.index({
   userId: 1,
   createdAt: -1,
 });
+orderSchema.index({ userId: 1, status: 1, createdAt: -1 });
+orderSchema.index({ userId: 1, paymentMethod: 1, createdAt: -1 });
 
 const Order = mongoose.model<IOrder>('Order', orderSchema);
 

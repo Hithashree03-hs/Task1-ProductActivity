@@ -8,7 +8,7 @@ export interface IUser extends Document {
   themePreference: 'system' | 'light' | 'dark';
   favoriteCategories: string[];
   notificationPreferences: Record<string, boolean>;
-  expoPushTokens: string[];
+  expoPushTokens: Array<{ hash: string; encryptedToken: string }>;
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
@@ -41,7 +41,7 @@ const userSchema = new Schema<IUser>(
       of: Boolean,
       default: () => ({ order: true, payment: true, shipping: true, wishlist: true, promotions: true, cart: true }),
     },
-    expoPushTokens: { type: [String], default: [] },
+    expoPushTokens: { type: [{ hash: { type: String, required: true }, encryptedToken: { type: String, required: true } }], default: [] },
   },
   {
     timestamps: true,
