@@ -5,8 +5,7 @@ import './App.css';
 
 
 
-const API_BASE_URL =
-'http://localhost:5000/api';
+const API_BASE_URL = 'https://task1-productactivity.onrender.com/api';
 
 
 
@@ -3444,7 +3443,7 @@ const [registerError, setRegisterError] =
 
   <div
 
-    className="modal-overlay panel-overlay"
+    className={`modal-overlay panel-overlay panel-view-${activePanel}`}
 
     onClick={() => setActivePanel(null)}
 
