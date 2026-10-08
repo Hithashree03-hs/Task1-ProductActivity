@@ -18,6 +18,7 @@ const keySecret = () => process.env.RAZORPAY_KEY_SECRET || '';
 
 const razorpayFetch = async (path: string, init: RequestInit = {}): Promise<any> => {
   if (!keyId() || !keySecret()) throw new Error('Razorpay is not configured on the server');
+  if (!keyId().startsWith('rzp_test_')) throw new Error('Only Razorpay TEST API keys are accepted by this integration');
   const auth = Buffer.from(`${keyId()}:${keySecret()}`).toString('base64');
   const response = await fetch(`${apiBase}${path}`, {
     ...init,
